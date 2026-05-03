@@ -7,6 +7,14 @@
   <em>WebRTC · ~50ms latency · 1080p · Open Source</em>
 </p>
 
+<p align="center">
+  <a href="https://www.paypal.com/donate/?hosted_button_id=&business=cleyvinos@gmail.com&currency_code=USD">
+    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
+  </a>
+</p>
+
+> This project is free and open source. If you find it useful, consider supporting the developer!
+
 ---
 
 ## Features
@@ -125,6 +133,16 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 | Input | xdotool (Linux), ADB (FireTV) |
 | Client | Vanilla HTML/JS/CSS (no framework) |
 | Container | Docker + docker-compose |
+
+## Support the Project
+
+If Emiscreen has been useful to you, consider making a donation. Every contribution helps keep the project alive!
+
+<p align="center">
+  <a href="https://www.paypal.com/donate/?hosted_button_id=&business=cleyvinos@gmail.com&currency_code=USD">
+    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
+  </a>
+</p>
 
 ## License
 

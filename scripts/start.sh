@@ -26,6 +26,8 @@ FIRETV_IP=""
 RESOLUTION=""
 FPS=""
 VERBOSE=""
+NO_ADB=""
+NO_RELAY=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -49,6 +51,14 @@ while [[ $# -gt 0 ]]; do
             VERBOSE="--verbose"
             shift
             ;;
+        --no-adb)
+            NO_ADB="--no-adb"
+            shift
+            ;;
+        --no-relay)
+            NO_RELAY="--no-relay"
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -57,6 +67,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --firetv, -f IP        FireTV IP address for ADB control"
             echo "  --resolution, -r RES   Capture resolution (e.g., 1920x1080)"
             echo "  --fps N                Capture frame rate"
+            echo "  --no-adb               Disable ADB/FireTV control"
+            echo "  --no-relay             Disable input relay"
             echo "  --verbose, -v          Enable debug logging"
             echo "  --help, -h             Show this help"
             exit 0
@@ -85,6 +97,14 @@ fi
 
 if [ -n "${VERBOSE}" ]; then
     CMD="${CMD} --verbose"
+fi
+
+if [ -n "${NO_ADB}" ]; then
+    CMD="${CMD} --no-adb"
+fi
+
+if [ -n "${NO_RELAY}" ]; then
+    CMD="${CMD} --no-relay"
 fi
 
 echo "============================================"

@@ -88,12 +88,6 @@ class EmiscreenWebRTC:
             "type": pc.localDescription.type,
         })
 
-    async def add_ice_candidate(self, candidate_data: dict):
-        """Add an ICE candidate from the client."""
-        # ICE candidates are handled automatically by aiortc's trickle ICE
-        # This endpoint is kept for compatibility
-        pass
-
     def is_connected(self) -> bool:
         """Check if any peer is connected."""
         return any(

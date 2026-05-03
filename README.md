@@ -43,7 +43,7 @@
 .\scripts\setup.ps1
 
 # 2. Iniciar Emiscreen
-.\scripts\start.ps1 -Source windows-desktop
+.\scripts\start.ps1 -Source windows-pc
 ```
 
 ## Documentación

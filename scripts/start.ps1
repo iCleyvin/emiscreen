@@ -4,6 +4,15 @@
 $ProjectDir = Split-Path -Parent $PSScriptRoot
 $VenvDir = Join-Path $ProjectDir ".venv"
 
+# Parse parameters
+param(
+    [string]$Source = "windows-pc",
+    [string]$Firetv = "",
+    [string]$Resolution = "",
+    [int]$Fps = 0,
+    [switch]$Verbose
+)
+
 # Activate virtual environment
 if (Test-Path (Join-Path $VenvDir "Scripts\Activate.ps1")) {
     & (Join-Path $VenvDir "Scripts\Activate.ps1")
@@ -11,15 +20,6 @@ if (Test-Path (Join-Path $VenvDir "Scripts\Activate.ps1")) {
     Write-Host "Virtual environment not found. Run .\scripts\setup.ps1 first." -ForegroundColor Red
     exit 1
 }
-
-# Parse parameters
-param(
-    [string]$Source = "windows-desktop",
-    [string]$Firetv = "",
-    [string]$Resolution = "",
-    [int]$Fps = 0,
-    [switch]$Verbose
-)
 
 # Build command
 $Cmd = "python -m emiscreen.server --source $Source"

@@ -10,6 +10,7 @@ import logging
 import os
 import signal
 import subprocess
+from fractions import Fraction
 from typing import Optional
 
 import av
@@ -201,7 +202,7 @@ class FFmpegVideoTrack(AiortcVideoTrack):
 
         # Set timestamp
         frame.pts = int(self._timestamp * 90000)  # 90kHz clock
-        frame.time_base = "1/90000"
+        frame.time_base = Fraction(1, 90000)
 
         self._timestamp += self._frame_interval
 

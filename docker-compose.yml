@@ -4,8 +4,9 @@ services:
   emiscreen:
     build: .
     container_name: emiscreen
-    ports:
-      - "8443:8443"
+    # network_mode: host required for ADB and local network discovery
+    # When using host networking, ports are bound directly (no port mapping needed)
+    network_mode: host
     environment:
       - EMISCREEN_SOURCE=ubuntu-desktop
       - EMISCREEN_RESOLUTION=1920x1080

@@ -21,7 +21,6 @@
     const reconnectBtn = document.getElementById('reconnect-btn');
     const statsOverlay = document.getElementById('stats-overlay');
     const statsFps = document.getElementById('stats-fps');
-    const statsLatency = document.getElementById('stats-latency');
     const statsResolution = document.getElementById('stats-resolution');
 
     // State
@@ -251,18 +250,18 @@
 
     // Input Handlers
     function handleKeyDown(e) {
-        const keyName = KEY_MAP[e.keyCode] || e.key;
-        sendInput({ type: 'keydown', key: keyName, keyCode: e.keyCode });
+        const keyName = KEY_MAP[e.code] || KEY_MAP[e.key] || e.key;
+        sendInput({ type: 'keydown', key: keyName, code: e.code });
 
         // Prevent default for navigation keys (we handle them)
-        if (KEY_MAP[e.keyCode]) {
+        if (KEY_MAP[e.code] || KEY_MAP[e.key]) {
             e.preventDefault();
         }
     }
 
     function handleKeyUp(e) {
-        const keyName = KEY_MAP[e.keyCode] || e.key;
-        sendInput({ type: 'keyup', key: keyName, keyCode: e.keyCode });
+        const keyName = KEY_MAP[e.code] || KEY_MAP[e.key] || e.key;
+        sendInput({ type: 'keyup', key: keyName, code: e.code });
     }
 
     function handleMouseMove(e) {

@@ -22,7 +22,7 @@ cd emiscreen
 ## Run
 
 ```powershell
-.\scripts\start.ps1 -Source windows-desktop
+.\scripts\start.ps1 -Source windows-pc
 ```
 
 ## Notes
@@ -37,6 +37,6 @@ To run Emiscreen as a Windows service, use NSSM:
 
 ```powershell
 # Download NSSM from nssm.cc
-nssm install Emiscreen "C:\path\to\emiscreen\.venv\Scripts\python.exe" "-m emiscreen.server --source windows-desktop"
+nssm install Emiscreen "C:\path\to\emiscreen\.venv\Scripts\python.exe" "-m emiscreen.server --source windows-pc"
 nssm start Emiscreen
 ```

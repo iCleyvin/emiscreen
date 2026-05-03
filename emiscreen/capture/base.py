@@ -11,7 +11,6 @@ import platform
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from aiortc import VideoStreamTrack
 from aiortc.mediastreams import VideoStreamTrack as AiortcVideoTrack
 
 from emiscreen.config import CaptureConfig

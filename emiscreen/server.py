@@ -26,6 +26,7 @@ from emiscreen.config import (
     CaptureConfig,
     RelayConfig,
     ServerConfig,
+    SOURCES,
     get_source,
     load_from_env,
 )
@@ -74,7 +75,6 @@ class EmiscreenServer:
 
         # WebRTC signaling
         self.app.router.add_post("/offer", self._handle_offer)
-        self.app.router.add_get("/answer", self._handle_answer)
 
         # WebSocket input relay
         self.app.router.add_get("/input", self._handle_input_ws)
@@ -107,21 +107,6 @@ class EmiscreenServer:
             return web.json_response({"sdp": answer, "type": "answer"})
         except Exception as e:
             logger.error(f"Offer handling failed: {e}")
-            return web.json_response({"error": str(e)}, status=500)
-
-    async def _handle_answer(self, request: web.Request) -> web.Response:
-        """Handle ICE candidates from client."""
-        if not self.webrtc:
-            return web.json_response({"error": "WebRTC not initialized"}, status=503)
-
-        try:
-            body = await request.json()
-            candidate = body.get("candidate")
-            if candidate:
-                await self.webrtc.add_ice_candidate(candidate)
-            return web.json_response({"status": "ok"})
-        except Exception as e:
-            logger.error(f"Answer handling failed: {e}")
             return web.json_response({"error": str(e)}, status=500)
 
     async def _handle_input_ws(self, request: web.Request) -> web.StreamResponse:
@@ -229,6 +214,7 @@ class EmiscreenServer:
                 xdotool_path=self.relay_config.xdotool_path,
                 dpad_step=self.relay_config.dpad_step,
             )
+            await self.input_relay.start()
 
         # Start HTTP server with SSL
         ssl_context = self._create_ssl_context()
@@ -340,7 +326,7 @@ def main():
     parser.add_argument(
         "--source", "-s",
         default="ubuntu-desktop",
-        help=f"Capture source name (default: ubuntu-desktop). Available: {list(__import__('emiscreen.config', fromlist=['SOURCES']).SOURCES.keys())}",
+        help=f"Capture source name (default: ubuntu-desktop). Available: {list(SOURCES.keys())}",
     )
     parser.add_argument(
         "--host",

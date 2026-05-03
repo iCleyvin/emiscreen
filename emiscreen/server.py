@@ -337,7 +337,7 @@ def main():
         "--port", "-p",
         type=int,
         default=8445,
-        help="Server port (default: 8443)",
+        help="Server port (default: 8445)",
     )
     parser.add_argument(
         "--firetv", "-f",

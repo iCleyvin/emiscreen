@@ -8,7 +8,6 @@ Supports both physical displays and virtual Xvfb displays.
 import asyncio
 import logging
 import os
-import signal
 import subprocess
 from fractions import Fraction
 from typing import Optional

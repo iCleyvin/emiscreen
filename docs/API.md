@@ -6,7 +6,7 @@
 Serves the main viewer page (`viewer.html`).
 
 ### POST /offer
-WebRTC signaling - receives SDP offer from client.
+WebRTC signaling - receives SDP offer from client, returns SDP answer.
 
 **Request:**
 ```json
@@ -20,27 +20,6 @@ WebRTC signaling - receives SDP offer from client.
 {
     "sdp": "v=0\r\no=- ...",
     "type": "answer"
-}
-```
-
-### GET /answer
-WebRTC signaling - receives ICE candidates (kept for compatibility).
-
-**Request:**
-```json
-{
-    "candidate": {
-        "candidate": "candidate:...",
-        "sdpMid": "0",
-        "sdpMLineIndex": 0
-    }
-}
-```
-
-**Response:**
-```json
-{
-    "status": "ok"
 }
 ```
 

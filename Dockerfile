@@ -28,7 +28,7 @@ RUN mkdir -p certs && \
     -addext "subjectAltName=DNS:emiscreen.local,DNS:localhost,IP:127.0.0.1"
 
 # Expose ports
-EXPOSE 8443
+EXPOSE 8445
 
 # Default command
 CMD ["python", "-m", "emiscreen.server", "--source", "ubuntu-desktop"]

@@ -73,15 +73,14 @@ class ADBController:
 
     async def wake(self):
         """Wake the FireTV device and prevent sleep."""
-        # Power on
         await self.send_keyevent("power")
         await asyncio.sleep(1)
-        # Home to ensure we're on main screen
         await self.send_keyevent("home")
-        # Keep screen awake
-        await self._settings_put("global", "stay_on_while_plugged_in", "7")
-        await self._settings_put("system", "screen_off_timeout", "1800000")
-        logger.info("FireTV woken and configured to stay awake")
+        try:
+            await self._settings_put("global", "stay_on_while_plugged_in", "7")
+            await self._settings_put("system", "screen_off_timeout", "1800000")
+        except Exception as e:
+            logger.debug(f"Could not set display settings: {e}")
 
     async def sleep(self):
         """Put FireTV to sleep."""

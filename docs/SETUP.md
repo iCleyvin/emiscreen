@@ -65,7 +65,7 @@ docker compose --profile headless up -d
 git clone https://github.com/iCleyvin/emiscreen.git
 cd emiscreen
 .\scripts\setup.ps1
-.\scripts\start.ps1 -Source windows-desktop
+.\scripts\start.ps1 -Source windows-pc
 ```
 
 Then manually open `https://<SERVER_IP>:8445` on the FireTV browser.

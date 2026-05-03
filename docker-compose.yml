@@ -4,8 +4,6 @@ services:
   emiscreen:
     build: .
     container_name: emiscreen
-    # network_mode: host required for ADB and local network discovery
-    # When using host networking, ports are bound directly (no port mapping needed)
     network_mode: host
     environment:
       - EMISCREEN_SOURCE=ubuntu-desktop
@@ -17,9 +15,8 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ./certs:/app/certs
     devices:
-      - /dev/dri:/dev/dri  # GPU acceleration (optional)
+      - /dev/dri:/dev/dri
     restart: unless-stopped
-    network_mode: host  # Required for ADB and local network discovery
 
   # Optional: Xvfb for headless mode (NAS)
   xvfb:

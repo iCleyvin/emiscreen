@@ -207,7 +207,7 @@ other/
 
 | Decision | Rationale |
 |----------|-----------|
-| **Port 8445** | Port 8443 occupied by Coolify on production server |
+| **Port 8445** | Changed from default 8443 to avoid conflict with Coolify on production server |
 | **`av` not PyAV** | PyAV not available on PyPI for Python 3.12 |
 | **`nas-omv` default** | Xvfb display `:99` already present on server |
 | **User systemd service** | Avoids `sudo`, won't interfere with Docker/coolify |

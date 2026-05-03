@@ -65,5 +65,5 @@ Write-Host "  Setup complete!" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:"
-Write-Host "  Start server: .\scripts\start.ps1 -Source windows-desktop"
+Write-Host "  Start server: .\scripts\start.ps1 -Source windows-pc"
 Write-Host ""

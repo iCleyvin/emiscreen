@@ -51,7 +51,7 @@ class TestServerConfig:
     def test_defaults(self):
         config = ServerConfig()
         assert config.host == "0.0.0.0"
-        assert config.port == 8443
+        assert config.port == 8445
         assert "cert.pem" in config.ssl_cert
         assert "key.pem" in config.ssl_key
 

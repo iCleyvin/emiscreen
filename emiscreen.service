@@ -1,0 +1,22 @@
+[Unit]
+Description=Emiscreen - Remote Display via WebRTC
+After=network.target
+
+[Service]
+Type=simple
+User=cleyvinserv
+WorkingDirectory=/mnt/datos/dev/emiscreen
+Environment=PATH=/mnt/datos/dev/emiscreen/.venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=DISPLAY=:99
+ExecStart=/mnt/datos/dev/emiscreen/.venv/bin/python -m emiscreen.server --source nas-omv --port 8445
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits to protect production services
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=default.target

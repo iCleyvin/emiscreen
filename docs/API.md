@@ -65,7 +65,7 @@ Detailed server status.
 {
     "server": {
         "host": "0.0.0.0",
-        "port": 8443,
+        "port": 8445,
         "uptime": "running"
     },
     "capture": {
@@ -88,7 +88,7 @@ Detailed server status.
 
 ## WebSocket Input Protocol
 
-Endpoint: `ws://<host>:8443/input` (or `wss://` for HTTPS)
+Endpoint: `ws://<host>:8445/input` (or `wss://` for HTTPS)
 
 ### Event Types
 
@@ -146,7 +146,7 @@ from emiscreen.server import EmiscreenServer
 from emiscreen.config import ServerConfig, CaptureConfig, ADBConfig, RelayConfig
 
 server = EmiscreenServer(
-    server_config=ServerConfig(host="0.0.0.0", port=8443),
+    server_config=ServerConfig(host="0.0.0.0", port=8445),
     capture_config=CaptureConfig(type="linux", resolution="1920x1080", fps=30),
     adb_config=ADBConfig(enabled=True, host="192.168.1.100"),
     relay_config=RelayConfig(enabled=True),
@@ -163,7 +163,7 @@ from emiscreen.relay.adb import ADBController
 adb = ADBController(host="192.168.1.100")
 await adb.connect()
 await adb.wake()
-await adb.launch_browser("https://192.168.1.50:8443")
+await adb.launch_browser("https://192.168.1.50:8445")
 await adb.send_keyevent("dpad_up")
 await adb.tap(500, 300)
 ```

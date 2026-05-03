@@ -336,7 +336,7 @@ def main():
     parser.add_argument(
         "--port", "-p",
         type=int,
-        default=8443,
+        default=8445,
         help="Server port (default: 8443)",
     )
     parser.add_argument(

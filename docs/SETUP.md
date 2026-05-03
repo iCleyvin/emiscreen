@@ -68,7 +68,7 @@ cd emiscreen
 .\scripts\start.ps1 -Source windows-desktop
 ```
 
-Then manually open `https://<SERVER_IP>:8443` on the FireTV browser.
+Then manually open `https://<SERVER_IP>:8445` on the FireTV browser.
 
 ## Configuration
 
@@ -77,7 +77,7 @@ Then manually open `https://<SERVER_IP>:8443` on the FireTV browser.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `EMISCREEN_HOST` | Server bind address | `0.0.0.0` |
-| `EMISCREEN_PORT` | Server port | `8443` |
+| `EMISCREEN_PORT` | Server port | `8445` |
 | `EMISCREEN_SOURCE` | Capture source name | `ubuntu-desktop` |
 | `EMISCREEN_RESOLUTION` | Capture resolution | `1920x1080` |
 | `EMISCREEN_FPS` | Capture frame rate | `30` |
@@ -96,8 +96,8 @@ Then manually open `https://<SERVER_IP>:8443` on the FireTV browser.
 
 ### "Connection refused" on FireTV
 
-- Check server is running: `curl -k https://localhost:8443/health`
-- Check firewall: `sudo ufw allow 8443/tcp`
+- Check server is running: `curl -k https://localhost:8445/health`
+- Check firewall: `sudo ufw allow 8445/tcp`
 - Verify same network: `ping <SERVER_IP>` from FireTV
 
 ### "ADB device unauthorized"

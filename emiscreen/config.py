@@ -27,7 +27,7 @@ class CaptureConfig:
 class ServerConfig:
     """Configuration for the Emiscreen server."""
     host: str = "0.0.0.0"
-    port: int = 8443
+    port: int = 8445
     ssl_cert: str = "certs/cert.pem"
     ssl_key: str = "certs/key.pem"
     ws_input_port: int = 8444

@@ -45,7 +45,30 @@
 
 ## Quick Start
 
-### Linux (Ubuntu/Debian)
+### One-Line Install (Recommended)
+
+**Linux / macOS / WSL:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
+```
+
+**With FireTV:**
+```bash
+# Linux
+curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh | bash -s -- --firetv 192.168.1.100
+
+# Windows
+iwr https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex -FireTV "192.168.1.100"
+```
+
+### Manual Setup
+
+#### Linux (Ubuntu/Debian)
 
 ```bash
 git clone https://github.com/iCleyvin/emiscreen.git
@@ -54,7 +77,7 @@ cd emiscreen
 ./scripts/start.sh --source ubuntu-desktop --firetv <FIRETV_IP>
 ```
 
-### Windows
+#### Windows
 
 ```powershell
 git clone https://github.com/iCleyvin/emiscreen.git
@@ -63,7 +86,7 @@ cd emiscreen
 .\scripts\start.ps1 -Source windows-pc
 ```
 
-### Docker
+#### Docker
 
 ```bash
 # Standard mode (with X11 display)

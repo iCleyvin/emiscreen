@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  emiscreen:
+    build: .
+    container_name: emiscreen
+    ports:
+      - "8443:8443"
+    environment:
+      - EMISCREEN_SOURCE=ubuntu-desktop
+      - EMISCREEN_RESOLUTION=1920x1080
+      - EMISCREEN_FPS=30
+      - EMISCREEN_FIRETV_IP=${FIRETV_IP:-}
+      - DISPLAY=:0
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ./certs:/app/certs
+    devices:
+      - /dev/dri:/dev/dri  # GPU acceleration (optional)
+    restart: unless-stopped
+    network_mode: host  # Required for ADB and local network discovery
+
+  # Optional: Xvfb for headless mode (NAS)
+  xvfb:
+    image: linuxserver/xvfb
+    container_name: emiscreen-xvfb
+    environment:
+      - DISPLAY=:99
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SCREEN_DEPTH=24
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    restart: unless-stopped
+    profiles:
+      - headless

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Emiscreen</title>
+    <link rel="stylesheet" href="/static/viewer.css">
+</head>
+<body>
+    <div id="app">
+        <video id="remote-video" autoplay playsinline></video>
+        <div id="status-overlay" class="overlay">
+            <div class="spinner"></div>
+            <p id="status-text">Connecting...</p>
+        </div>
+        <div id="error-overlay" class="overlay hidden">
+            <p id="error-text">Connection lost</p>
+            <button id="reconnect-btn">Reconnect</button>
+        </div>
+        <div id="stats-overlay" class="stats-overlay hidden">
+            <span id="stats-fps">-- fps</span>
+            <span id="stats-latency">-- ms</span>
+            <span id="stats-resolution">--</span>
+        </div>
+    </div>
+    <script src="/static/viewer.js"></script>
+</body>
+</html>

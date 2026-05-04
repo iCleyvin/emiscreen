@@ -154,6 +154,11 @@ if (-not (Test-Path $VenvDir)) {
 Write-Host "  Installing dependencies..." -ForegroundColor Gray
 & $VenvPython -m pip install --upgrade pip -q 2>&1 | Out-Null
 & $VenvPython -m pip install -r "$InstallDir\requirements.txt" -q 2>&1 | Out-Null
+
+# Install the package itself (so 'emiscreen.server' module is available)
+Write-Host "  Installing package..." -ForegroundColor Gray
+& $VenvPython -m pip install "$InstallDir" -q 2>&1 | Out-Null
+
 Write-Host "  Dependencies installed" -ForegroundColor Green
 
 # =============================================================================

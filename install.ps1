@@ -265,11 +265,9 @@ sys.exit(result.returncode)
 
 $LaunchScript | Out-File -FilePath "$InstallDir\emiscreen_launcher.py" -Encoding UTF8
 
-# Create batch file wrapper
+# Create batch file wrapper - uses absolute path to venv python
 $BatchContent = '@echo off
-cd /d "%~dp0"
-call .venv\Scripts\activate.bat >nul 2>&1
-python -m emiscreen.server %*'
+"%~dp0..\.venv\Scripts\python.exe" -m emiscreen.server %*'
 $BatchContent | Out-File -FilePath "$LauncherDir\emiscreen.bat" -Encoding ASCII
 
 # Remove helper script (not needed anymore)

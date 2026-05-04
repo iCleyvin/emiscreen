@@ -155,9 +155,11 @@ Write-Host "  Installing dependencies..." -ForegroundColor Gray
 & $VenvPython -m pip install --upgrade pip -q 2>&1 | Out-Null
 & $VenvPython -m pip install -r "$InstallDir\requirements.txt" -q 2>&1 | Out-Null
 
-# Install the package itself (so 'emiscreen.server' module is available)
+# Install the package itself in editable mode so 'emiscreen.server' module is importable
 Write-Host "  Installing package..." -ForegroundColor Gray
-& $VenvPython -m pip install "$InstallDir" -q 2>&1 | Out-Null
+Set-Location $InstallDir
+& $VenvPython -m pip install -e . -q 2>&1 | Out-Null
+Set-Location $env:USERPROFILE
 
 Write-Host "  Dependencies installed" -ForegroundColor Green
 

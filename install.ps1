@@ -150,16 +150,10 @@ if (-not (Test-Path $VenvDir)) {
     & $PythonCmd -m venv $VenvDir 2>&1 | Out-Null
 }
 
-# Install dependencies
+# Install dependencies only (NOT the package itself)
 Write-Host "  Installing dependencies..." -ForegroundColor Gray
 & $VenvPython -m pip install --upgrade pip -q 2>&1 | Out-Null
 & $VenvPython -m pip install -r "$InstallDir\requirements.txt" -q 2>&1 | Out-Null
-
-# Install the package so it's importable via python -m
-Write-Host "  Installing package..." -ForegroundColor Gray
-Push-Location $InstallDir
-& $VenvPython -m pip install . -q 2>&1 | Out-Null
-Pop-Location
 
 Write-Host "  Dependencies installed" -ForegroundColor Green
 
@@ -273,25 +267,15 @@ $LaunchScript | Out-File -FilePath "$InstallDir\emiscreen_launcher.py" -Encoding
 
 # Create batch file wrapper
 $BatchContent = '@echo off
-setlocal
-set SCRIPT_DIR=%~dp0
-cd /d "%SCRIPT_DIR%"
+cd /d "%~dp0"
 call .venv\Scripts\activate.bat >nul 2>&1
-python emiscreen_launcher.py %*'
+python -m emiscreen.server %*'
 $BatchContent | Out-File -FilePath "$LauncherDir\emiscreen.bat" -Encoding ASCII
 
-# Create PowerShell launcher
-$PsLauncher = @"
-if ("`$args" -eq "--help" -or "`$args" -eq "-h") {
-    Write-Host "Emiscreen - Remote Display via WebRTC`nUsage: emiscreen [options]`nRun 'emiscreen --help' for options."
-    exit 0
+# Remove helper script (not needed anymore)
+if (Test-Path "$InstallDir\emiscreen_launcher.py") {
+    Remove-Item "$InstallDir\emiscreen_launcher.py" -Force -ErrorAction SilentlyContinue
 }
-& "$env:LOCALAPPDATA\emiscreen\.venv\Scripts\python.exe" "$env:LOCALAPPDATA\emiscreen\emiscreen_launcher.py" `$args
-exit `$LASTEXITCODE
-"@
-
-$PsLauncherPath = "$LauncherDir\emiscreen.ps1"
-$PsLauncher | Out-File -FilePath $PsLauncherPath -Encoding UTF8
 
 # Add to PATH
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")

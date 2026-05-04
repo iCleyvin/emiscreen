@@ -7,6 +7,12 @@
   <em>WebRTC · ~50-150ms latency · 1080p · Cross-Platform · Native Fire TV App</em>
 </p>
 
+<p align="center">
+  <a href="https://www.paypal.com/donate/?hosted_button_id=UMBEQY4YL27LU">
+    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
+  </a>
+</p>
+
 ---
 
 ## What Changed (v1.0)

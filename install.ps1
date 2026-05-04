@@ -155,9 +155,11 @@ Write-Host "  Installing dependencies..." -ForegroundColor Gray
 & $VenvPython -m pip install --upgrade pip -q 2>&1 | Out-Null
 & $VenvPython -m pip install -r "$InstallDir\requirements.txt" -q 2>&1 | Out-Null
 
-# Install the package normally (non-editable) so it's importable
+# Install the package so it's importable via python -m
 Write-Host "  Installing package..." -ForegroundColor Gray
-& $VenvPython -m pip install "$InstallDir" --quiet 2>&1 | Out-Null
+Push-Location $InstallDir
+& $VenvPython -m pip install . -q 2>&1 | Out-Null
+Pop-Location
 
 Write-Host "  Dependencies installed" -ForegroundColor Green
 

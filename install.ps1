@@ -152,7 +152,7 @@ Write-Host "  Installing dependencies..." -ForegroundColor Gray
 Write-Host "  Dependencies installed" -ForegroundColor Green
 
 # =============================================================================
-# SSL CERTIFICATES
+# SSL CERTIFICATES - Generate using Python cryptography (no external deps)
 # =============================================================================
 Write-Host ""
 Write-Host "[SSL] Generating certificates..." -ForegroundColor Yellow
@@ -163,15 +163,60 @@ $KeyFile = "$CertDir\key.pem"
 
 New-Item -ItemType Directory -Force -Path $CertDir | Out-Null
 
-$OpenSSL = Get-Command openssl -ErrorAction SilentlyContinue
-if ($OpenSSL) {
-    if (-not (Test-Path $CertFile)) {
-        & openssl req -new -x509 -keyout $KeyFile -out $CertFile -days 3650 -nodes -subj "/CN=emiscreen.local" 2>&1 | Out-Null
-    }
-    Write-Host "  Certificates generated" -ForegroundColor Green
-} else {
-    Write-Host "  OpenSSL not found - will auto-generate on first run" -ForegroundColor Gray
+if (-not (Test-Path $CertFile)) {
+    $GenCertScript = @"
+import os, ipaddress
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+import datetime
+
+cert_dir = r'$CertDir'
+cert_path = os.path.join(cert_dir, 'cert.pem')
+key_path = os.path.join(cert_dir, 'key.pem')
+
+key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'emiscreen.local')])
+cert = (
+    x509.CertificateBuilder()
+    .subject_name(subject)
+    .issuer_name(issuer)
+    .public_key(key.public_key())
+    .serial_number(x509.random_serial_number())
+    .not_valid_before(datetime.datetime.utcnow())
+    .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=3650))
+    .add_extension(
+        x509.SubjectAlternativeName([
+            x509.DNSName('emiscreen.local'),
+            x509.DNSName('localhost'),
+            x509.IPAddress(ipaddress.IPv4Address('127.0.0.1')),
+        ]),
+        critical=False,
+    )
+    .sign(key, hashes.SHA256())
+)
+
+cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+key_pem = key.private_bytes(
+    serialization.Encoding.PEM,
+    serialization.PrivateFormat.TraditionalOpenSSL,
+    serialization.NoEncryption(),
+)
+
+with open(cert_path, 'wb') as f: f.write(cert_pem)
+with open(key_path, 'wb') as f: f.write(key_pem)
+print('OK')
+"@
+
+    $GenCertScript | Out-File -FilePath "$InstallDir\gen_certs.py" -Encoding UTF8
+    & $VenvPython "$InstallDir\gen_certs.py" 2>&1 | Out-Null
+    Remove-Item "$InstallDir\gen_certs.py" -Force -ErrorAction SilentlyContinue
 }
+
+Write-Host "  Certificates ready" -ForegroundColor Green
 
 # =============================================================================
 # CREATE LAUNCHER

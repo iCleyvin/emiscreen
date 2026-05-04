@@ -63,6 +63,11 @@ $OldPathEntries = @(
     "$env:LOCALAPPDATA\emiscreen\bin"
 )
 
+# Also clean up if running from inside an old emiscreen folder
+if ($PSScriptRoot -and (Test-Path "$PSScriptRoot\emiscreen\server.py")) {
+    $OldDirs += $PSScriptRoot
+}
+
 foreach ($dir in $OldDirs) {
     if (Test-Path $dir) {
         Write-Host "  Removing old installation: $dir" -ForegroundColor Gray

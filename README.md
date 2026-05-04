@@ -13,7 +13,49 @@
   </a>
 </p>
 
-> This project is free and open source. If you find it useful, consider supporting the developer!
+---
+
+## Quick Start
+
+### Install (One Command)
+
+**Linux / macOS / WSL:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
+```
+
+### Run
+
+After installation, simply type:
+
+```bash
+emiscreen
+```
+
+With FireTV:
+```bash
+emiscreen --firetv 192.168.1.100
+```
+
+Then open **https://localhost:8445** in your browser.
+
+---
+
+## Options
+
+```bash
+emiscreen --source ubuntu-desktop   # Capture source (ubuntu-desktop, windows-pc, nas-omv)
+emiscreen --firetv 192.168.1.100     # FireTV IP for auto-launch
+emiscreen --resolution 1280x720      # Resolution
+emiscreen --fps 24                   # Frame rate
+emiscreen --port 8445                 # Server port
+emiscreen --help                      # Show all options
+```
 
 ---
 
@@ -25,6 +67,8 @@
 - **FireTV native** — ADB auto-connect, wake, browser auto-launch, D-Pad mapping
 - **Zero install on target** — Only a browser needed on the receiving device
 - **Docker ready** — Includes Dockerfile and docker-compose with headless profile
+
+---
 
 ## Architecture
 
@@ -40,70 +84,20 @@
                             │
                      WebSocket Input
                             │
-                     xdotool / ADB
+                      xdotool / ADB
 ```
 
-## Quick Start
-
-### One-Line Install (Recommended)
-
-**Linux / macOS / WSL:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh | bash
-```
-
-**Windows (PowerShell):**
-```powershell
-iwr https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
-```
-
-**With FireTV:**
-```bash
-# Linux
-curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh | bash -s -- --firetv 192.168.1.100
-
-# Windows
-iwr https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex -FireTV "192.168.1.100"
-```
-
-### Manual Setup
-
-#### Linux (Ubuntu/Debian)
-
-```bash
-git clone https://github.com/iCleyvin/emiscreen.git
-cd emiscreen
-./scripts/setup.sh
-./scripts/start.sh --source ubuntu-desktop --firetv <FIRETV_IP>
-```
-
-#### Windows
-
-```powershell
-git clone https://github.com/iCleyvin/emiscreen.git
-cd emiscreen
-.\scripts\setup.ps1
-.\scripts\start.ps1 -Source windows-pc
-```
-
-#### Docker
-
-```bash
-# Standard mode (with X11 display)
-docker compose up -d
-
-# Headless mode (NAS, no display)
-docker compose --profile headless up -d
-```
+---
 
 ## FireTV Setup
 
 1. **Enable Developer Options**: Settings → My Fire TV → About → Click device name 7 times
 2. **Enable ADB Debugging**: Settings → My Fire TV → Developer Options → ADB Debugging = ON
 3. **Find IP**: Settings → My Fire TV → About → Network
-4. **Connect**: `./scripts/connect-firetv.sh <FIRETV_IP>`
 
 The server will auto-launch the browser on the FireTV when started with `--firetv`.
+
+---
 
 ## Configuration
 
@@ -125,6 +119,8 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 | `windows-pc` | Windows | Full desktop via gdigrab |
 | `nas-omv` | Linux | Virtual Xvfb display `:99` (headless) |
 
+---
+
 ## Performance
 
 | Metric | Target |
@@ -136,6 +132,8 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 | Bandwidth | 2-8 Mbps (H.264) |
 | Server CPU | <25% |
 
+---
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — Component diagram and data flow
@@ -145,6 +143,8 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 - [NAS Config](docs/NAS.md) — Headless NAS / OpenMediaVault setup
 - [Development](docs/DEVELOPMENT.md) — Contributing and debugging
 - [API Reference](docs/API.md) — HTTP endpoints and WebSocket protocol
+
+---
 
 ## Tech Stack
 
@@ -157,6 +157,8 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 | Client | Vanilla HTML/JS/CSS (no framework) |
 | Container | Docker + docker-compose |
 
+---
+
 ## Support the Project
 
 If Emiscreen has been useful to you, consider making a donation. Every contribution helps keep the project alive!
@@ -166,6 +168,8 @@ If Emiscreen has been useful to you, consider making a donation. Every contribut
     <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
   </a>
 </p>
+
+---
 
 ## License
 

@@ -1,6 +1,6 @@
 # Emiscreen - One-Line Installer for Windows (PowerShell)
 # Usage: iwr https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
-# After install, just type: emiscreen
+# Or: irm https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
 
 param(
     [string]$FireTV = "",
@@ -8,31 +8,29 @@ param(
     [string]$Resolution = "1920x1080",
     [int]$FPS = 30,
     [int]$Port = 8445,
-    [switch]$SkipADBCheck,
+    [switch]$Update,
     [switch]$Help
 )
 
-$InstallerVersion = "2.0.0"
+$InstallerVersion = "3.0.0"
 
 if ($Help) {
     Write-Host @"
-Emiscreen One-Line Windows Installer v$InstallerVersion
+Emiscreen Installer v$InstallerVersion
 
 Usage:
-    iwr https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
 
-After installation, run from ANY terminal:
+Options:
+    -FireTV     FireTV IP address
+    -Source     Capture source (windows-pc, ubuntu-desktop, nas-omv)
+    -Resolution Resolution (default: 1920x1080)
+    -FPS        Frame rate (default: 30)
+    -Port       Server port (default: 8445)
+    -Update     Force update even if already installed
+
+After install, run from any terminal:
     emiscreen
-    emiscreen --firetv 192.168.1.100
-    emiscreen --help
-
-Parameters:
-    -FireTV        FireTV IP address
-    -Source        Capture source (windows-pc, ubuntu-desktop, nas-omv)
-    -Resolution    Resolution (default: 1920x1080)
-    -FPS           Frame rate (default: 30)
-    -Port          Server port (default: 8445)
-    -SkipADBCheck  Skip ADB connection test
 
 "@
     exit 0
@@ -41,61 +39,84 @@ Parameters:
 $ErrorActionPreference = "Continue"
 $ProgressPreference = "SilentlyContinue"
 
+$Repo = "iCleyvin/emiscreen"
+$InstallDir = "$env:LOCALAPPDATA\emiscreen"
+$LauncherDir = "$env:LOCALAPPDATA\emiscreen\bin"
+$ExePath = "$LauncherDir\emiscreen.exe"
+
 Write-Host ""
-Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Emiscreen Installer v$InstallerVersion" -ForegroundColor Cyan
-Write-Host "  Remote Display via WebRTC" -ForegroundColor Gray
-Write-Host "============================================" -ForegroundColor Cyan
+Write-Host "=== Emiscreen v$InstallerVersion ===" -ForegroundColor Cyan
 Write-Host ""
 
-$ProjectDir = "$env:USERPROFILE\emiscreen"
-$OpenSSLInstalled = $false
+# =============================================================================
+# CLEANUP: Remove old installations and artifacts
+# =============================================================================
+Write-Host "[Cleanup] Checking for old installations..." -ForegroundColor Yellow
 
-Write-Host "[1/4] Environment check..." -ForegroundColor Yellow
-Write-Host "  OS: Windows $([System.Environment]::OSVersion.Version)" -ForegroundColor Gray
-Write-Host "  PowerShell: $($PSVersionTable.PSVersion)" -ForegroundColor Gray
+$OldDirs = @(
+    "$env:USERPROFILE\emiscreen",
+    "$env:LOCALAPPDATA\emiscreen"
+)
 
-# Install OpenSSL if needed
-$OpenSSL = Get-Command openssl -ErrorAction SilentlyContinue
-if (-not $OpenSSL) {
-    Write-Host "  Installing OpenSSL..." -ForegroundColor Cyan
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        winget install IgorZinovievTools.OpenSSL.Light --silent --accept-source-agreements --accept-package-agreements 2>&1 | Out-Null
-        $OpenSSL = Get-Command openssl -ErrorAction SilentlyContinue
+$OldPathEntries = @(
+    "$env:USERPROFILE\emiscreen",
+    "$env:LOCALAPPDATA\emiscreen\bin"
+)
+
+foreach ($dir in $OldDirs) {
+    if (Test-Path $dir) {
+        Write-Host "  Removing old installation: $dir" -ForegroundColor Gray
+        Remove-Item -Path $dir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
-if ($OpenSSL) {
-    $OpenSSLInstalled = $true
-    Write-Host "  OpenSSL: available" -ForegroundColor Green
-} else {
-    Write-Host "  OpenSSL: not available (will use fallback)" -ForegroundColor Yellow
+
+# Clean PATH of old entries
+$CurrentPath = [Environment]::GetEnvironmentVariable("Path", "User") -split ";" | Where-Object { $_ -and $_ -notlike "*emiscreen*" }
+[Environment]::SetEnvironmentVariable("Path", ($CurrentPath -join ";"), "User")
+$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + ($CurrentPath -join ";")
+
+Write-Host "  Old artifacts cleaned" -ForegroundColor Gray
+
+# =============================================================================
+# INSTALL: Fresh installation
+# =============================================================================
+Write-Host ""
+Write-Host "[Install] Downloading Emiscreen..." -ForegroundColor Yellow
+
+# Create installation directory
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+New-Item -ItemType Directory -Force -Path $LauncherDir | Out-Null
+
+# Download latest release
+try {
+    $ZipUrl = "https://github.com/$Repo/archive/refs/heads/main.zip"
+    $ZipPath = "$env:TEMP\emiscreen_main.zip"
+
+    Write-Host "  Downloading from GitHub..." -ForegroundColor Gray
+    Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipPath -UseBasicParsing -TimeoutSec 120
+
+    Write-Host "  Extracting..." -ForegroundColor Gray
+    Expand-Archive -Path $ZipPath -DestinationPath $env:TEMP -Force
+    Move-Item -Path "$env:TEMP\emiscreen-main\*" -Destination $InstallDir -Force
+    Remove-Item -Path $ZipPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "$env:TEMP\emiscreen-main" -Recurse -Force -ErrorAction SilentlyContinue
+
+    Write-Host "  Installed to: $InstallDir" -ForegroundColor Green
+} catch {
+    Write-Host "  ERROR: Download failed: $_" -ForegroundColor Red
+    exit 1
 }
 
+# =============================================================================
+# PYTHON SETUP
+# =============================================================================
 Write-Host ""
-Write-Host "[2/4] Downloading Emiscreen..." -ForegroundColor Yellow
+Write-Host "[Python] Setting up environment..." -ForegroundColor Yellow
 
-if (Test-Path $ProjectDir) {
-    Write-Host "  Updating existing installation..." -ForegroundColor Yellow
-    Set-Location $ProjectDir
-    git pull 2>&1 | Out-Null
-} else {
-    Write-Host "  Cloning repository..." -ForegroundColor Cyan
-    if (Get-Command git -ErrorAction SilentlyContinue) {
-        git clone --depth 1 https://github.com/iCleyvin/emiscreen.git $ProjectDir 2>&1 | Out-Null
-    } else {
-        $ZipPath = "$env:TEMP\emiscreen_main.zip"
-        Invoke-WebRequest -Uri "https://github.com/iCleyvin/emiscreen/archive/refs/heads/main.zip" -OutFile $ZipPath -UseBasicParsing -TimeoutSec 60
-        Expand-Archive -Path $ZipPath -DestinationPath "$env:TEMP" -Force
-        Move-Item -Path "$env:TEMP\emiscreen-main\*" -Destination $ProjectDir -Force
-        Remove-Item -Path $ZipPath, "$env:TEMP\emiscreen-main" -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}
-Write-Host "  Installed to $ProjectDir" -ForegroundColor Green
+$VenvDir = "$InstallDir\.venv"
+$VenvPython = "$VenvDir\Scripts\python.exe"
 
-Write-Host ""
-Write-Host "[3/4] Setting up Python..." -ForegroundColor Yellow
-
-# Find Python
+# Find or install Python
 $PythonCmd = $null
 foreach ($cmd in @("python", "python3", "py")) {
     $result = & $cmd --version 2>&1
@@ -106,64 +127,131 @@ foreach ($cmd in @("python", "python3", "py")) {
 }
 
 if (-not $PythonCmd) {
-    Write-Host "  Python not found, installing..." -ForegroundColor Yellow
+    Write-Host "  Python not found. Installing..." -ForegroundColor Yellow
     if (Get-Command winget -ErrorAction SilentlyContinue) {
         winget install Python.Python.3.12 --silent --accept-source-agreements --accept-package-agreements 2>&1 | Out-Null
-        Write-Host "  Python installed! RESTART POWERSHELL and run installer again." -ForegroundColor Green
+        Write-Host "  Python installed! Restart PowerShell and run installer again." -ForegroundColor Green
         exit 0
     }
-    Write-Host "  ERROR: Cannot install Python automatically" -ForegroundColor Red
+    Write-Host "  ERROR: Cannot install Python. Install manually from python.org" -ForegroundColor Red
     exit 1
 }
-Write-Host "  Python: $PythonCmd" -ForegroundColor Green
+
+Write-Host "  Python: $PythonCmd" -ForegroundColor Gray
 
 # Create venv
-$VenvDir = "$ProjectDir\.venv"
 if (-not (Test-Path $VenvDir)) {
+    Write-Host "  Creating virtual environment..." -ForegroundColor Gray
     & $PythonCmd -m venv $VenvDir 2>&1 | Out-Null
 }
-$VenvPython = "$VenvDir\Scripts\python.exe"
-Write-Host "  Virtual environment: ready" -ForegroundColor Green
 
 # Install dependencies
+Write-Host "  Installing dependencies..." -ForegroundColor Gray
 & $VenvPython -m pip install --upgrade pip -q 2>&1 | Out-Null
-& $VenvPython -m pip install -r "$ProjectDir\requirements.txt" -q 2>&1 | Out-Null
-Write-Host "  Dependencies: installed" -ForegroundColor Green
+& $VenvPython -m pip install -r "$InstallDir\requirements.txt" -q 2>&1 | Out-Null
+Write-Host "  Dependencies installed" -ForegroundColor Green
 
+# =============================================================================
+# SSL CERTIFICATES
+# =============================================================================
 Write-Host ""
-Write-Host "[4/4] Configuring..." -ForegroundColor Yellow
+Write-Host "[SSL] Generating certificates..." -ForegroundColor Yellow
 
-# Create launcher script
-$LauncherContent = '@echo off
+$CertDir = "$InstallDir\certs"
+$CertFile = "$CertDir\cert.pem"
+$KeyFile = "$CertDir\key.pem"
+
+New-Item -ItemType Directory -Force -Path $CertDir | Out-Null
+
+$OpenSSL = Get-Command openssl -ErrorAction SilentlyContinue
+if ($OpenSSL) {
+    if (-not (Test-Path $CertFile)) {
+        & openssl req -new -x509 -keyout $KeyFile -out $CertFile -days 3650 -nodes -subj "/CN=emiscreen.local" 2>&1 | Out-Null
+    }
+    Write-Host "  Certificates generated" -ForegroundColor Green
+} else {
+    Write-Host "  OpenSSL not found - will auto-generate on first run" -ForegroundColor Gray
+}
+
+# =============================================================================
+# CREATE LAUNCHER
+# =============================================================================
+Write-Host ""
+Write-Host "[Launcher] Creating executable..." -ForegroundColor Yellow
+
+# Create a proper Windows executable wrapper using Python
+$LaunchScript = @"
+import sys, os, subprocess
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+VENV_PYTHON = os.path.join(SCRIPT_DIR, ".venv", "Scripts", "python.exe")
+
+HELP_TEXT = '''Emiscreen - Remote Display via WebRTC
+
+Usage: emiscreen [options]
+  --source, -s NAME    Capture source (ubuntu-desktop, windows-pc, nas-omv)
+  --firetv, -f IP      FireTV IP for auto-launch
+  --resolution, -r RES  Resolution (default: 1920x1080)
+  --fps N              Frame rate (default: 30)
+  --port, -p N         Server port (default: 8445)
+  --verbose, -v        Enable debug logging
+  --help               Show this help
+
+Examples:
+  emiscreen
+  emiscreen --firetv 192.168.1.100
+
+Open: https://localhost:8445
+'''
+
+if "--help" in sys.argv or "-h" in sys.argv:
+    print(HELP_TEXT)
+    sys.exit(0)
+
+result = subprocess.run([VENV_PYTHON, "-m", "emiscreen.server"] + sys.argv[1:])
+sys.exit(result.returncode)
+"@
+
+$LaunchScript | Out-File -FilePath "$InstallDir\emiscreen_launcher.py" -Encoding UTF8
+
+# Create batch file wrapper
+$BatchContent = '@echo off
 setlocal
 set SCRIPT_DIR=%~dp0
-"%SCRIPT_DIR%.venv\Scripts\python.exe" "%SCRIPT_DIR%emiscreen.py" %*
-'
-$LauncherPath = "$ProjectDir\emiscreen.bat"
-$LauncherContent | Out-File -FilePath $LauncherPath -Encoding ASCII
+cd /d "%SCRIPT_DIR%"
+call .venv\Scripts\activate.bat >nul 2>&1
+python emiscreen_launcher.py %*'
+$BatchContent | Out-File -FilePath "$LauncherDir\emiscreen.bat" -Encoding ASCII
 
-# Add to PATH for current session (persistent via Environment Variable)
+# Create PowerShell launcher
+$PsLauncher = @"
+if ("`$args" -eq "--help" -or "`$args" -eq "-h") {
+    Write-Host "Emiscreen - Remote Display via WebRTC`nUsage: emiscreen [options]`nRun 'emiscreen --help' for options."
+    exit 0
+}
+& "$env:LOCALAPPDATA\emiscreen\.venv\Scripts\python.exe" "$env:LOCALAPPDATA\emiscreen\emiscreen_launcher.py" `$args
+exit `$LASTEXITCODE
+"@
+
+$PsLauncherPath = "$LauncherDir\emiscreen.ps1"
+$PsLauncher | Out-File -FilePath $PsLauncherPath -Encoding UTF8
+
+# Add to PATH
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($UserPath -notlike "*emiscreen*") {
-    [Environment]::SetEnvironmentVariable("Path", "$UserPath;$ProjectDir", "User")
-    $env:Path = "$env:Path;$ProjectDir"
-}
-Write-Host "  Launcher: $LauncherPath" -ForegroundColor Green
-Write-Host "  PATH: updated (run 'emiscreen' from any terminal)" -ForegroundColor Gray
-
-# SSL certificates
-$CertDir = "$ProjectDir\certs"
-if (-not (Test-Path $CertDir)) { New-Item -ItemType Directory -Force -Path $CertDir | Out-Null }
-
-if ($OpenSSLInstalled -and (-not (Test-Path "$CertDir\cert.pem"))) {
-    Write-Host "  Generating SSL certificates..." -ForegroundColor Cyan
-    & openssl req -new -x509 -keyout "$CertDir\key.pem" -out "$CertDir\cert.pem" -days 3650 -nodes -subj "/CN=emiscreen.local" 2>&1 | Out-Null
-    Write-Host "  SSL: generated" -ForegroundColor Green
-} else {
-    Write-Host "  SSL: will auto-generate on first run" -ForegroundColor Gray
+$NewPathEntry = "$LauncherDir"
+if ($UserPath -notlike "*$NewPathEntry*") {
+    [Environment]::SetEnvironmentVariable("Path", "$UserPath;$NewPathEntry", "User")
+    $env:Path = "$env:Path;$NewPathEntry"
 }
 
-# Environment file
+Write-Host "  Launcher: $LauncherDir\emiscreen.bat" -ForegroundColor Green
+
+# =============================================================================
+# ENVIRONMENT CONFIG
+# =============================================================================
+Write-Host ""
+Write-Host "[Config] Writing environment..." -ForegroundColor Yellow
+
 $envContent = @"
 EMISCREEN_PORT=$Port
 EMISCREEN_SOURCE=$Source
@@ -171,32 +259,39 @@ EMISCREEN_RESOLUTION=$Resolution
 EMISCREEN_FPS=$FPS
 EMISCREEN_FIRETV_IP=$FireTV
 "@
-$envContent | Out-File -FilePath "$ProjectDir\.env" -Encoding UTF8
+$envContent | Out-File -FilePath "$InstallDir\.env" -Encoding UTF8
 
-# Test ADB
-if ($FireTV -and -not $SkipADBCheck) {
+# Test FireTV if provided
+if ($FireTV) {
+    Write-Host ""
+    Write-Host "[FireTV] Testing connection..." -ForegroundColor Yellow
     $ADB = Get-Command adb -ErrorAction SilentlyContinue
     if ($ADB) {
         $addr = if ($FireTV -match ":\d+$") { $FireTV } else { "$FireTV`:5555" }
         $conn = & adb connect $addr 2>&1
-        if ($conn -match "connected") { Write-Host "  FireTV: connected" -ForegroundColor Green }
+        if ($conn -match "connected") {
+            Write-Host "  Connected!" -ForegroundColor Green
+        } else {
+            Write-Host "  Could not connect - enable ADB debugging on FireTV" -ForegroundColor Yellow
+        }
     }
 }
 
-# Summary
+# =============================================================================
+# DONE
+# =============================================================================
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Green
-Write-Host "  Installation Complete!" -ForegroundColor Green
+Write-Host "  Emiscreen installed successfully!" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Location: $ProjectDir" -ForegroundColor Cyan
+Write-Host "  Location: $InstallDir" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Now open a NEW terminal and run:" -ForegroundColor White
+Write-Host "  Open a NEW terminal and run:" -ForegroundColor White
 Write-Host "    emiscreen" -ForegroundColor Green
-Write-Host ""
 if ($FireTV) {
     Write-Host "    emiscreen --firetv $FireTV" -ForegroundColor Green
 }
 Write-Host ""
-Write-Host "Then open: https://localhost:$Port in your browser" -ForegroundColor White
+Write-Host "  Then open: https://localhost:$Port in your browser" -ForegroundColor White
 Write-Host ""

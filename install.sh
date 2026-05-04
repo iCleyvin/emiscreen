@@ -1,14 +1,13 @@
 #!/bin/bash
 # Emiscreen - One-Line Installer (Linux/macOS/WSL)
 # Usage: curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh | bash
-# After install, just type: emiscreen
 
 set -e
 
-INSTALLER_VERSION="2.0.0"
-GITHUB_REPO="iCleyvin/emiscreen"
-GITHUB_URL="https://github.com/${GITHUB_REPO}"
-RAW_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main"
+VERSION="3.0.0"
+REPO="iCleyvin/emiscreen"
+INSTALL_DIR="${HOME}/.local/emiscreen"
+BIN_DIR="${HOME}/.local/bin"
 
 # Colors
 GREEN='\033[0;32m'
@@ -17,16 +16,11 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_step() { echo -e "${CYAN}[${1}]${NC} $2"; }
-
-# Arguments
+# Parse args
 SOURCE="ubuntu-desktop"
 FIRETV_IP=""
 RESOLUTION="1920x1080"
 FPS="30"
-SKIP_CONFIRM=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -34,96 +28,79 @@ while [[ $# -gt 0 ]]; do
         --firetv|-f) FIRETV_IP="$2"; shift 2 ;;
         --resolution|-r) RESOLUTION="$2"; shift 2 ;;
         --fps) FPS="$2"; shift 2 ;;
-        --yes|-y) SKIP_CONFIRM=true; shift ;;
         --help|-h)
-            echo "Emiscreen One-Line Installer v${INSTALLER_VERSION}"
-            echo ""
-            echo "Usage: curl -fsSL ${RAW_URL}/install.sh | bash [OPTIONS]"
-            echo ""
-            echo "Options:"
-            echo "  --source, -s SOURCE   Capture source (ubuntu-desktop, nas-omv)"
-            echo "  --firetv, -f IP      FireTV IP address"
-            echo "  --resolution, -r RES  Resolution (default: 1920x1080)"
-            echo "  --fps N               Frame rate (default: 30)"
-            echo "  --yes, -y             Skip confirmation"
-            echo ""
-            echo "After install, run from ANY terminal:"
-            echo "  emiscreen"
-            echo "  emiscreen --firetv 192.168.1.100"
-            exit 0
-            ;;
+            echo "Emiscreen Installer v$VERSION"
+            echo "Usage: curl -fsSL .../install.sh | bash"
+            echo "Options: --source, --firetv, --resolution, --fps"
+            exit 0 ;;
         *) shift ;;
     esac
 done
 
-echo -e "${BOLD}"
-echo "============================================"
-echo "  Emiscreen Installer v${INSTALLER_VERSION}"
-echo "  Remote Display via WebRTC"
-echo "============================================"
-echo -e "${NC}"
+echo -e "${BOLD}=== Emiscreen v$VERSION ===${NC}"
 
-# Detect OS
-detect_os() {
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if grep -q "Microsoft" /proc/version 2>/dev/null; then echo "wsl"
-        elif [ -f /etc/debian_version ]; then echo "debian"
-        elif [ -f /etc/redhat-release ]; then echo "rhel"
-        else echo "linux"; fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then echo "macos"
-    else echo "unknown"; fi
-}
+# =============================================================================
+# CLEANUP: Remove old installations
+# =============================================================================
+echo -e "${YELLOW}[Cleanup] Removing old installations...${NC}"
 
-OS_TYPE=$(detect_os)
-log_info "OS: ${OS_TYPE}"
+rm -rf "${HOME}/emiscreen" 2>/dev/null || true
+rm -rf "${HOME}/.local/emiscreen" 2>/dev/null || true
+rm -f "${HOME}/.local/bin/emiscreen" 2>/dev/null || true
+
+# Remove old PATH additions from shell configs
+for rc in .bashrc .zshrc .profile; do
+    if [ -f "${HOME}/$rc" ]; then
+        sed -i '/emiscreen/d' "${HOME}/$rc" 2>/dev/null || true
+    fi
+done
+
+echo -e "  Old artifacts cleaned"
+
+# =============================================================================
+# INSTALL: Fresh installation
+# =============================================================================
+echo -e "${YELLOW}[Install] Downloading Emiscreen...${NC}"
+
+mkdir -p "${INSTALL_DIR}"
+mkdir -p "${BIN_DIR}"
+
+# Download and extract
+cd /tmp
+rm -rf emiscreen-main emiscreen_main.zip 2>/dev/null || true
+
+curl -fsSL "https://github.com/${REPO}/archive/refs/heads/main.zip" -o emiscreen_main.zip
+unzip -q emiscreen_main.zip
+mv emiscreen-main/* "${INSTALL_DIR}/"
+rm -rf emiscreen-main emiscreen_main.zip
+
+echo -e "  ${GREEN}Installed to: ${INSTALL_DIR}${NC}"
+
+# =============================================================================
+# DEPENDENCIES
+# =============================================================================
+echo -e "${YELLOW}[Dependencies] Installing...${NC}"
 
 SUDO=""
-if [ "$EUID" -ne 0 ] && [ "$OS_TYPE" != "wsl" ]; then
+if [ "$EUID" -ne 0 ]; then
     SUDO="sudo"
 fi
 
-# 1. Install dependencies
-log_step "1/4" "Installing dependencies..."
-
-install_apt() {
+if command -v apt &> /dev/null; then
     $SUDO apt update -qq
-    $SUDO apt install -y -qq ffmpeg xdotool x11-utils xvfb adb openssl python3 python3-pip python3-venv curl 2>/dev/null || true
-}
-
-install_yum() {
-    $SUDO dnf install -y epel-release 2>/dev/null || true
-    $SUDO dnf install -y ffmpeg xdotool xorg-x11-utils xorg-x11-server-Xvfb android-tools openssl python3 python3-pip curl 2>/dev/null || true
-}
-
-install_brew() {
-    brew install ffmpeg adb python@3.12 2>/dev/null || true
-}
-
-case "$OS_TYPE" in
-    debian|linux) install_apt ;;
-    rhel) install_yum ;;
-    macos) install_brew ;;
-    wsl) log_warn "WSL detected - install deps manually if needed" ;;
-esac
-
-# 2. Clone/update repo
-log_step "2/4" "Downloading Emiscreen..."
-
-PROJECT_DIR="${HOME}/emiscreen"
-
-if [ -d "${PROJECT_DIR}" ]; then
-    log_info "Updating existing installation..."
-    cd "${PROJECT_DIR}" && git pull 2>/dev/null || true
-else
-    git clone --depth 1 https://github.com/iCleyvin/emiscreen.git "${PROJECT_DIR}"
+    $SUDO apt install -y -qq ffmpeg xdotool x11-utils xvfb openssl python3 python3-pip python3-venv curl 2>/dev/null || true
+elif command -v dnf &> /dev/null; then
+    $SUDO dnf install -y ffmpeg xdotool xorg-x11-utils xorg-x11-server-Xvfb openssl python3 python3-pip curl 2>/dev/null || true
+elif command -v brew &> /dev/null; then
+    brew install ffmpeg python@3.12 2>/dev/null || true
 fi
 
-log_info "Installed to: ${PROJECT_DIR}"
+# =============================================================================
+# PYTHON SETUP
+# =============================================================================
+echo -e "${YELLOW}[Python] Setting up...${NC}"
 
-# 3. Setup Python
-log_step "3/4" "Setting up Python environment..."
-
-cd "${PROJECT_DIR}"
+cd "${INSTALL_DIR}"
 
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
@@ -133,52 +110,61 @@ source .venv/bin/activate
 pip install --upgrade pip -q
 pip install -r requirements.txt -q
 
-# 4. Create launcher
-log_step "4/4" "Creating launcher..."
+echo -e "  ${GREEN}Python environment ready${NC}"
 
-# Create shell wrapper
-cat > emiscreen.sh << 'WRAPPER'
+# =============================================================================
+# SSL CERTIFICATES
+# =============================================================================
+echo -e "${YELLOW}[SSL] Generating certificates...${NC}"
+
+mkdir -p certs
+
+if ! command -v openssl &> /dev/null; then
+    echo -e "  ${YELLOW}OpenSSL not found - will auto-generate on first run${NC}"
+else
+    if [ ! -f "certs/cert.pem" ]; then
+        openssl req -new -x509 -keyout certs/key.pem -out certs/cert.pem \
+            -days 3650 -nodes -subj "/CN=emiscreen.local" \
+            -addext "subjectAltName=DNS:emiscreen.local,DNS:localhost,IP:127.0.0.1" 2>/dev/null || \
+        openssl req -new -x509 -keyout certs/key.pem -out certs/cert.pem \
+            -days 3650 -nodes -subj "/CN=emiscreen.local" 2>/dev/null || true
+    fi
+    echo -e "  ${GREEN}Certificates ready${NC}"
+fi
+
+# =============================================================================
+# CREATE LAUNCHER
+# =============================================================================
+echo -e "${YELLOW}[Launcher] Creating...${NC}"
+
+# Create launcher script
+cat > "${INSTALL_DIR}/emiscreen.sh" << 'LAUNCHER'
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/.venv/bin/activate"
 exec python -m emiscreen.server "$@"
-WRAPPER
+LAUNCHER
 
-chmod +x emiscreen.sh
+chmod +x "${INSTALL_DIR}/emiscreen.sh"
 
-# Install to ~/.local/bin for user-level access
-LOCAL_BIN="${HOME}/.local/bin"
-mkdir -p "${LOCAL_BIN}"
+# Symlink to ~/.local/bin
+rm -f "${BIN_DIR}/emiscreen" 2>/dev/null || true
+ln -s "${INSTALL_DIR}/emiscreen.sh" "${BIN_DIR}/emiscreen"
 
-# Remove old symlink if exists
-rm -f "${LOCAL_BIN}/emiscreen" 2>/dev/null || true
-
-# Create symlink
-ln -s "${PROJECT_DIR}/emiscreen.sh" "${LOCAL_BIN}/emiscreen"
-
-# Also make it executable from project dir
-chmod +x "${PROJECT_DIR}/emiscreen.sh"
-
-# Add to PATH in shellrc if not already there
+# Add to PATH in shell rc
 SHELL_RC="${HOME}/.bashrc"
-if [ -f "${HOME}/.zshrc" ]; then SHELL_RC="${HOME}/.zshrc"; fi
+[ -f "${HOME}/.zshrc" ] && SHELL_RC="${HOME}/.zshrc"
 
-if ! grep -q ".local/bin" "${SHELL_RC}" 2>/dev/null; then
+if ! grep -q "\.local/bin" "${SHELL_RC}" 2>/dev/null; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "${SHELL_RC}"
 fi
 
-# SSL certificates
-mkdir -p certs
-if [ ! -f "certs/cert.pem" ]; then
-    openssl req -new -x509 -keyout certs/key.pem -out certs/cert.pem \
-        -days 3650 -nodes -subj "/CN=emiscreen.local" \
-        -addext "subjectAltName=DNS:emiscreen.local,DNS:localhost,IP:127.0.0.1" 2>/dev/null || \
-    openssl req -new -x509 -keyout certs/key.pem -out certs/cert.pem \
-        -days 3650 -nodes -subj "/CN=emiscreen.local" 2>/dev/null || true
-fi
+echo -e "  ${GREEN}Command 'emiscreen' available${NC}"
 
-# Environment file
-cat > .env << EOF
+# =============================================================================
+# ENVIRONMENT CONFIG
+# =============================================================================
+cat > "${INSTALL_DIR}/.env" << EOF
 EMISCREEN_PORT=8445
 EMISCREEN_SOURCE=${SOURCE}
 EMISCREEN_RESOLUTION=${RESOLUTION}
@@ -186,23 +172,26 @@ EMISCREEN_FPS=${FPS}
 EMISCREEN_FIRETV_IP=${FIRETV_IP}
 EOF
 
-# Test FireTV connection
+# Test FireTV if provided
 if [ -n "${FIRETV_IP}" ] && command -v adb &> /dev/null; then
+    echo -e "${YELLOW}[FireTV] Testing connection...${NC}"
     if adb connect "${FIRETV_IP}:5555" 2>/dev/null | grep -q "connected"; then
-        log_info "FireTV connected!"
+        echo -e "  ${GREEN}Connected!${NC}"
     fi
 fi
 
+# =============================================================================
+# DONE
+# =============================================================================
 echo ""
 echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN}  Installation Complete!${NC}"
+echo -e "${GREEN}  Emiscreen installed successfully!${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
-echo -e "  Location: ${PROJECT_DIR}"
+echo -e "  Location: ${INSTALL_DIR}"
 echo ""
 echo -e "  ${BOLD}Open a NEW terminal and run:${NC}"
 echo -e "    ${GREEN}emiscreen${NC}"
-echo ""
 if [ -n "${FIRETV_IP}" ]; then
 echo -e "    ${GREEN}emiscreen --firetv ${FIRETV_IP}${NC}"
 fi

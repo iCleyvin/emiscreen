@@ -10,6 +10,7 @@ aiohttp-based HTTPS server that handles:
 
 import argparse
 import asyncio
+import ipaddress
 import json
 import logging
 import os
@@ -272,27 +273,50 @@ class EmiscreenServer:
         return ssl_context
 
     def _generate_certs(self):
-        """Generate self-signed SSL certificates."""
-        import subprocess
+        """Generate self-signed SSL certificates using cryptography library."""
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives import serialization
+        import datetime
+
         cert_dir = pathlib.Path(self.server_config.ssl_cert).parent
         cert_dir.mkdir(parents=True, exist_ok=True)
-
         cert_path = pathlib.Path(self.server_config.ssl_cert)
         key_path = pathlib.Path(self.server_config.ssl_key)
 
-        subprocess.run(
-            [
-                "openssl", "req", "-new", "-x509",
-                "-keyout", str(key_path),
-                "-out", str(cert_path),
-                "-days", "3650",
-                "-nodes",
-                "-subj", "/CN=emiscreen.local",
-                "-addext", "subjectAltName=DNS:emiscreen.local,DNS:localhost,IP:127.0.0.1",
-            ],
-            check=True,
-            capture_output=True,
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+        subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "emiscreen.local")])
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(datetime.datetime.utcnow())
+            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=3650))
+            .add_extension(
+                x509.SubjectAlternativeName([
+                    x509.DNSName("emiscreen.local"),
+                    x509.DNSName("localhost"),
+                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+                ]),
+                critical=False,
+            )
+            .sign(key, hashes.SHA256())
         )
+
+        cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+        key_pem = key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        )
+
+        cert_path.write_bytes(cert_pem)
+        key_path.write_bytes(key_pem)
         logger.info(f"SSL certificates generated at {cert_dir}")
 
     def _get_local_ip(self) -> str:

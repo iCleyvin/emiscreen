@@ -208,4 +208,16 @@ Apache 2.0 — See [LICENSE](LICENSE)
 
 ---
 
+## Support
+
+If Emiscreen has been useful to you, consider supporting the project. Every contribution helps keep development active!
+
+<p align="center">
+  <a href="https://www.paypal.com/donate/?hosted_button_id=UMBEQY4YL27LU">
+    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
+  </a>
+</p>
+
+---
+
 **by Cleyvin** © 2026

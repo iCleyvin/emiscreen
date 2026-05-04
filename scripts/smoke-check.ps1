@@ -39,7 +39,8 @@ New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 try {
     # Step 1: Start server in background
     Write-Host "Step 1: Starting server..." -ForegroundColor Yellow
-    $serverLog = Join-Path $tempDir "server.log"
+    $serverLogOut = Join-Path $tempDir "server.out.log"
+    $serverLogErr = Join-Path $tempDir "server.err.log"
     $pythonPath = (Get-Command python -ErrorAction SilentlyContinue).Source
     if (-not $pythonPath) {
         $pythonPath = (Get-Command python3 -ErrorAction SilentlyContinue).Source
@@ -51,8 +52,8 @@ try {
     
     $serverProcess = Start-Process -FilePath $pythonPath `
         -ArgumentList "-m", "emiscreen.server", "--source", $Source, "--port", $Port, "--no-adb", "--no-relay" `
-        -RedirectStandardOutput $serverLog `
-        -RedirectStandardError $serverLog `
+        -RedirectStandardOutput $serverLogOut `
+        -RedirectStandardError $serverLogErr `
         -WorkingDirectory (Join-Path $PSScriptRoot "..") `
         -WindowStyle Hidden -PassThru
     
@@ -80,9 +81,9 @@ try {
         Write-Result "HTTPS /health responds OK" "PASS"
     } else {
         Write-Result "HTTPS /health did not respond within ${httpsWait}s" "FAIL"
-        if (Test-Path $serverLog) {
+        if (Test-Path $serverLogErr) {
             Write-Host "Server log:" -ForegroundColor Gray
-            Get-Content $serverLog -Tail 20 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+            Get-Content $serverLogErr -Tail 20 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
         }
         exit 1
     }

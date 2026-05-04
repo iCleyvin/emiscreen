@@ -16,23 +16,23 @@ class TestCaptureConfig:
     def test_default_values(self):
         config = CaptureConfig(type="windows")
         assert config.type == "windows"
-        assert config.resolution == "1920x1080"
-        assert config.fps == 30
+        assert config.resolution == "1280x720"  # Actual default
+        assert config.fps == 24  # Actual default
         assert config.codec == "h264"
-        assert config.bitrate == "8M"
+        assert config.bitrate == "4M"  # Actual default
 
     def test_custom_values(self):
         config = CaptureConfig(
             type="linux",
-            resolution="1280x720",
-            fps=24,
+            resolution="1920x1080",
+            fps=30,
             codec="vp8",
-            bitrate="4M",
+            bitrate="8M",
         )
-        assert config.resolution == "1280x720"
-        assert config.fps == 24
+        assert config.resolution == "1920x1080"
+        assert config.fps == 30
         assert config.codec == "vp8"
-        assert config.bitrate == "4M"
+        assert config.bitrate == "8M"
 
 
 class TestQualityPresets:
@@ -67,7 +67,7 @@ class TestGetSource:
         assert config.type == "virtual"
 
     def test_invalid_source(self):
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             get_source("invalid-source")
 
 

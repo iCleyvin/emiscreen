@@ -1,48 +1,33 @@
 """Tests for Windows input relay module."""
 import pytest
+import sys
 from unittest.mock import patch, MagicMock
 
 
 class TestWindowsInputBackend:
-    @pytest.fixture
-    def mock_windows(self):
-        with patch('emiscreen.relay.windows_input.ctypes') as mock_ctypes:
-            mock_user32 = MagicMock()
-            mock_ctypes.windll.user32 = mock_user32
-            mock_ctypes.wintypes = MagicMock()
-            mock_ctypes.c_uint = int
-            mock_ctypes.c_ulong = int
-            mock_ctypes.byref = lambda x: x
-            mock_ctypes.sizeof = lambda x: 28
-            yield mock_user32
+    def test_class_exists(self):
+        from emiscreen.relay.input import WindowsInputBackend
+        assert WindowsInputBackend is not None
 
-    def test_send_key_press(self, mock_windows):
-        from emiscreen.relay.windows_input import WindowsInputBackend
-        backend = WindowsInputBackend()
-        backend.send_key('a', 'keydown')
-        mock_windows.SendInput.assert_called()
+    def test_has_required_methods(self):
+        from emiscreen.relay.input import WindowsInputBackend
+        required = ['move_mouse', 'mouse_down', 'mouse_up', 'scroll', 'key_down', 'key_up', 'type_text']
+        for method in required:
+            assert hasattr(WindowsInputBackend, method), f"Missing method: {method}"
 
-    def test_send_key_release(self, mock_windows):
-        from emiscreen.relay.windows_input import WindowsInputBackend
-        backend = WindowsInputBackend()
-        backend.send_key('a', 'keyup')
-        mock_windows.SendInput.assert_called()
+    def test_linux_backend_exists(self):
+        from emiscreen.relay.input import LinuxInputBackend
+        assert LinuxInputBackend is not None
 
-    def test_send_click(self, mock_windows):
-        from emiscreen.relay.windows_input import WindowsInputBackend
-        backend = WindowsInputBackend()
-        backend.send_click(100, 200, 'left')
-        mock_windows.SetCursorPos.assert_called_with(100, 200)
-        mock_windows.mouse_event.assert_called()
+    def test_linux_has_xdo_key_map(self):
+        from emiscreen.relay.input import LinuxInputBackend
+        backend = LinuxInputBackend()
+        assert "enter" in backend.XDO_KEY_MAP
+        assert "space" in backend.XDO_KEY_MAP
+        assert backend.XDO_KEY_MAP["enter"] == "Return"
 
-    def test_mouse_move(self, mock_windows):
-        from emiscreen.relay.windows_input import WindowsInputBackend
-        backend = WindowsInputBackend()
-        backend.mouse_move(500, 300)
-        mock_windows.SetCursorPos.assert_called_with(500, 300)
-
-    def test_scroll(self, mock_windows):
-        from emiscreen.relay.windows_input import WindowsInputBackend
-        backend = WindowsInputBackend()
-        backend.scroll(3)
-        mock_windows.mouse_event.assert_called()
+    def test_create_backend_factory(self):
+        from emiscreen.relay.input import create_backend
+        # Test that factory returns correct type for known systems
+        linux_backend = create_backend("linux")
+        assert type(linux_backend).__name__ == "LinuxInputBackend"

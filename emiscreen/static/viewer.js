@@ -47,6 +47,7 @@
     let videoPlaying = false;
 
     // ========== Config ==========
+    const IS_FIRETV_APP = navigator.userAgent.includes('wv') || navigator.userAgent.includes('WebView');
     const RECONNECT_BASE_DELAY = 1000;
     const RECONNECT_MAX_DELAY = 30000;
     const MAX_RECONNECT_ATTEMPTS = 5;
@@ -262,6 +263,12 @@
     }
 
     function handleConnectionError(error) {
+        if (IS_FIRETV_APP) {
+            // Fire TV app auto-trusts certs via WebViewClient, so SSL is never the issue
+            showStatus('Conectando...');
+            scheduleReconnect();
+            return;
+        }
         if (location.protocol === 'https:' && (error.name === 'TypeError' || error.message.includes('Failed to fetch'))) {
             showSsl();
             isSslError = true;

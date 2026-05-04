@@ -25,11 +25,20 @@ cd emiscreen
 .\scripts\start.ps1 -Source windows-pc
 ```
 
+Or directly after installation:
+```powershell
+emiscreen --source windows-pc
+```
+
 ## Notes
 
-- **Input relay**: xdotool is Linux-only. On Windows, input relay is not available.
-- **Capture**: Uses FFmpeg gdigrab which captures the entire desktop.
-- **FireTV control**: If ADB is installed, FireTV auto-launch works on Windows too.
+- **Input relay**: Fully supported on Windows via native `SendInput` API (`ctypes`). No extra dependencies required.
+- **Capture**: Uses FFmpeg `gdigrab` which captures the entire desktop, outputting raw YUV420P frames.
+- **Fire TV control**: If ADB is installed, Fire TV auto-launch works on Windows too.
+- **Certificates**: The first time you run Emiscreen, it will generate a self-signed certificate. To avoid browser warnings on your PC, run:
+  ```powershell
+  .\scripts\trust-cert.ps1
+  ```
 
 ## Running as a Service
 

@@ -1,23 +1,27 @@
 # Emiscreen
 
-**Remote Display via WebRTC** — Cast any desktop to any FireTV or browser with near-zero latency.
+**Remote Display via WebRTC** — Use your Fire TV (or any browser) as a wireless second monitor.
 
 <p align="center">
   <strong>Turn any TV into a wireless monitor.</strong><br>
-  <em>WebRTC · ~50ms latency · 1080p · Open Source</em>
+  <em>WebRTC · ~50-150ms latency · 1080p · Cross-Platform · Native Fire TV App</em>
 </p>
 
-<p align="center">
-  <a href="https://www.paypal.com/donate/?hosted_button_id=&business=cleyvinos@gmail.com&currency_code=USD">
-    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
-  </a>
-</p>
+---
+
+## What Changed (v1.0)
+
+- **Native Fire TV app** — No more browser SSL hassles. A dedicated Android app handles the stream in fullscreen with automatic certificate trust and proper D-Pad remote support.
+- **Cross-platform input relay** — Keyboard, mouse, and Fire TV D-Pad now work on both **Linux (xdotool)** and **Windows (native SendInput via ctypes, zero extra dependencies)**.
+- **Robust capture pipeline** — Unified FFmpeg → rawvideo YUV420P pipeline for both Linux and Windows. Removed the broken custom H.264 Annex-B decoder.
+- **Better Web client** — Fixed key mappings, WebSocket ping/pong for connection health, automatic fullscreen, and a helpful SSL warning overlay for browser users.
+- **Smart certificates** — Auto-generated self-signed certs now include your LAN IP in the Subject Alternative Name.
 
 ---
 
 ## Quick Start
 
-### Install (One Command)
+### 1. Install Server (PC)
 
 **Linux / macOS / WSL:**
 ```bash
@@ -29,73 +33,94 @@ curl -fsSL https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.sh 
 irm https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
 ```
 
-### Run
-
-After installation, simply type:
+### 2. Run Server
 
 ```bash
-emiscreen
+# Linux
+emiscreen --source ubuntu-desktop
+
+# Windows
+emiscreen --source windows-pc
+
+# With Fire TV ADB auto-launch (optional)
+emiscreen --source windows-pc --firetv 192.168.1.100
 ```
 
-With FireTV:
-```bash
-emiscreen --firetv 192.168.1.100
-```
+### 3. Connect Fire TV
 
-Then open **https://localhost:8445** in your browser.
+**Recommended: Native App**
+1. Build and sideload the `firetv-app/` Android project (see [FIRETV.md](docs/FIRETV.md)).
+2. Open the app, enter your PC's IP address once, and it connects automatically.
+
+**Alternative: Browser**
+- Open `https://<PC_IP>:8445` in Silk or Firefox on your Fire TV.
+- If you see a certificate warning, choose **Advanced → Proceed**.
 
 ---
 
 ## Options
 
 ```bash
-emiscreen --source ubuntu-desktop   # Capture source (ubuntu-desktop, windows-pc, nas-omv)
-emiscreen --firetv 192.168.1.100     # FireTV IP for auto-launch
-emiscreen --resolution 1280x720      # Resolution
+emiscreen --source ubuntu-desktop   # linux | windows-pc | nas-omv
+emiscreen --firetv 192.168.1.100     # Auto-launch browser via ADB
+emiscreen --resolution 1280x720      # Capture resolution
 emiscreen --fps 24                   # Frame rate
 emiscreen --port 8445                 # Server port
-emiscreen --help                      # Show all options
+emiscreen --no-adb                    # Disable ADB control
+emiscreen --no-relay                  # Disable input relay
+emiscreen --verbose                   # Debug logging
 ```
 
 ---
 
 ## Features
 
-- **Ultra-low latency** — ~50-150ms via direct WebRTC peer-to-peer
-- **Multi-source** — Linux (x11grab), Windows (gdigrab), Headless NAS (Xvfb)
-- **Full input relay** — Keyboard, mouse, touch, and FireTV D-Pad → xdotool/ADB
-- **FireTV native** — ADB auto-connect, wake, browser auto-launch, D-Pad mapping
-- **Zero install on target** — Only a browser needed on the receiving device
-- **Docker ready** — Includes Dockerfile and docker-compose with headless profile
+- **Ultra-low latency** — Direct WebRTC peer-to-peer (~50-150ms)
+- **Multi-source capture** — Linux (`x11grab`), Windows (`gdigrab`), Headless NAS (`Xvfb`)
+- **Cross-platform input relay** — Linux (`xdotool`) + Windows (`SendInput` native)
+- **Native Fire TV app** — Kotlin, WebView, ignores SSL, D-Pad passthrough, settings screen
+- **Web client fallback** — Works in any modern browser with auto-reconnect
+- **Smart SSL** — Auto-generated certs include your LAN IP
+- **Docker ready** — Dockerfile + docker-compose included
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────┐     ┌──────────────────┐     ┌──────────────┐
-│  SOURCE      │────▶│  EMISCREEN       │────▶│  TARGET      │
-│  (Desktop)   │     │  SERVER          │     │  (Browser)   │
-│              │     │                  │     │              │
-│  FFmpeg      │     │  aiortc +        │     │  WebRTC      │
-│  x11grab/    │     │  aiohttp         │     │  Receiver    │
-│  gdigrab     │     │                  │     │  (HTML/JS)   │
-└──────────────┘     └──────────────────┘     └──────────────┘
+┌──────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  SOURCE      │────▶│  EMISCREEN       │────▶│  TARGET          │
+│  (Desktop)   │     │  SERVER          │     │  (Fire TV /      │
+│              │     │                  │     │   Browser)       │
+│  FFmpeg      │     │  aiortc +        │     │                  │
+│  x11grab/    │     │  aiohttp         │     │  Native App or   │
+│  gdigrab     │     │                  │     │  WebRTC Receiver │
+└──────────────┘     └──────────────────┘     └──────────────────┘
                             │
                      WebSocket Input
                             │
-                      xdotool / ADB
+              Linux: xdotool  |  Windows: SendInput
 ```
 
 ---
 
-## FireTV Setup
+## Fire TV Setup
 
+### Native App (Recommended)
+1. Clone this repo.
+2. Open `firetv-app/` in Android Studio.
+3. Build APK: **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
+4. Sideload to Fire TV:
+   ```bash
+   adb connect 192.168.1.100:5555
+   adb install app/build/outputs/apk/debug/app-debug.apk
+   ```
+5. Launch **Emiscreen** from your Fire TV apps list.
+
+### Browser (Fallback)
 1. **Enable Developer Options**: Settings → My Fire TV → About → Click device name 7 times
 2. **Enable ADB Debugging**: Settings → My Fire TV → Developer Options → ADB Debugging = ON
-3. **Find IP**: Settings → My Fire TV → About → Network
-
-The server will auto-launch the browser on the FireTV when started with `--firetv`.
+3. The server can auto-launch Silk/Firefox when started with `--firetv <IP>`.
 
 ---
 
@@ -129,7 +154,6 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 | Input latency (P95) | <50ms |
 | Frame rate | 24-30 fps |
 | Resolution | Up to 1920×1080 |
-| Bandwidth | 2-8 Mbps (H.264) |
 | Server CPU | <25% |
 
 ---
@@ -138,7 +162,7 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 
 - [Architecture](docs/ARCHITECTURE.md) — Component diagram and data flow
 - [Setup Guide](docs/SETUP.md) — Installation and configuration
-- [FireTV Config](docs/FIRETV.md) — FireTV-specific setup and D-Pad mapping
+- [FireTV Config](docs/FIRETV.md) — FireTV app build & D-Pad mapping
 - [Windows Config](docs/WINDOWS.md) — Windows deployment guide
 - [NAS Config](docs/NAS.md) — Headless NAS / OpenMediaVault setup
 - [Development](docs/DEVELOPMENT.md) — Contributing and debugging
@@ -152,22 +176,11 @@ The server will auto-launch the browser on the FireTV when started with `--firet
 |-------|-----------|
 | Server | Python 3.10+, aiohttp |
 | WebRTC | aiortc (pure Python) |
-| Capture | FFmpeg (x11grab / gdigrab) |
-| Input | xdotool (Linux), ADB (FireTV) |
-| Client | Vanilla HTML/JS/CSS (no framework) |
+| Capture | FFmpeg (x11grab / gdigrab) → rawvideo YUV420P |
+| Input | xdotool (Linux), SendInput/ctypes (Windows) |
+| Fire TV App | Kotlin, Android WebView |
+| Web Client | Vanilla HTML/JS/CSS |
 | Container | Docker + docker-compose |
-
----
-
-## Support the Project
-
-If Emiscreen has been useful to you, consider making a donation. Every contribution helps keep the project alive!
-
-<p align="center">
-  <a href="https://www.paypal.com/donate/?hosted_button_id=&business=cleyvinos@gmail.com&currency_code=USD">
-    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal" alt="Donate with PayPal" />
-  </a>
-</p>
 
 ---
 

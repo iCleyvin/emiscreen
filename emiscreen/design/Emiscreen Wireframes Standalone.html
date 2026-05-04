@@ -1,0 +1,2399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emiscreen — UI/UX Wireframes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111; font-family: 'Caveat', cursive; color: #eee; }
+
+    /* ── Sketchy base styles ─────────────────────────────── */
+    .wf-win {
+      background: #1a1a1a;
+      border: 2px solid #444;
+      border-radius: 10px;
+      overflow: hidden;
+      font-family: 'Caveat', cursive;
+      position: relative;
+    }
+    .wf-titlebar {
+      background: #252525;
+      border-bottom: 2px solid #333;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wf-dots { display: flex; gap: 5px; }
+    .wf-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 1.5px solid #555;
+    }
+    .wf-dot.red   { background: #c55; }
+    .wf-dot.yel   { background: #a83; }
+    .wf-dot.grn   { background: #484; }
+    .wf-title {
+      font-size: 13px; color: #888; margin-left: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .wf-badge {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1.5px dashed #555;
+      color: #777;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Sidebar */
+    .wf-layout { display: flex; height: calc(100% - 36px); }
+    .wf-sidebar {
+      width: 52px;
+      background: #1e1e1e;
+      border-right: 2px solid #2d2d2d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 6px;
+    }
+    .wf-sidebar.wide { width: 160px; align-items: flex-start; padding: 12px 8px; }
+    .wf-nav-item {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid #333;
+      background: #252525;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .wf-nav-item.active {
+      border-color: #4af;
+      background: rgba(68,170,255,0.12);
+    }
+    .wf-nav-item.wide {
+      width: 100%; height: 34px; border-radius: 7px;
+      justify-content: flex-start; padding: 0 10px; gap: 8px;
+    }
+    .wf-nav-icon {
+      width: 18px; height: 18px; border: 1.5px solid currentColor;
+      border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wf-nav-label { font-size: 13px; color: #bbb; white-space: nowrap; }
+    .wf-nav-item.active .wf-nav-label { color: #4af; }
+
+    .wf-content { flex: 1; overflow: hidden; position: relative; }
+
+    /* Tabs */
+    .wf-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #2d2d2d;
+      background: #1e1e1e;
+    }
+    .wf-tab {
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #666;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .wf-tab.active { color: #4af; border-bottom-color: #4af; }
+
+    /* Section / card */
+    .wf-section {
+      background: #222;
+      border: 1.5px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px;
+    }
+    .wf-section-title {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed #333;
+    }
+
+    /* Status dot */
+    .wf-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px;
+    }
+    .wf-dot-status {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .wf-dot-status.green { background: #4c4; box-shadow: 0 0 6px #4c4; }
+    .wf-dot-status.red   { background: #c44; }
+    .wf-dot-status.amber { background: #fa3; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* Buttons */
+    .wf-btn {
+      border: 1.5px solid #555;
+      background: #2a2a2a;
+      border-radius: 7px;
+      padding: 7px 14px;
+      font-family: 'Caveat', cursive;
+      font-size: 14px;
+      color: #ccc;
+      cursor: pointer;
+      text-align: center;
+    }
+    .wf-btn.primary {
+      border-color: #4af;
+      background: rgba(68,170,255,0.15);
+      color: #4af;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .wf-btn.danger {
+      border-color: #f64;
+      background: rgba(255,100,60,0.12);
+      color: #f64;
+    }
+    .wf-btn.success {
+      border-color: #4c4;
+      background: rgba(60,200,60,0.12);
+      color: #4c4;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    /* Inputs */
+    .wf-input {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1.5px solid #444;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .wf-input-label {
+      font-size: 12px; color: #888;
+      margin-bottom: 4px; display: block;
+    }
+    .wf-row { display: flex; gap: 8px; align-items: center; }
+    .wf-col { display: flex; flex-direction: column; gap: 8px; }
+    .wf-spacer { flex: 1; }
+
+    /* Stats bar */
+    .wf-stat-row {
+      display: flex; gap: 0;
+      border-top: 1.5px solid #2d2d2d;
+      padding: 0;
+    }
+    .wf-stat {
+      flex: 1; padding: 6px 10px;
+      border-right: 1.5px solid #2d2d2d;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; color: #666;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .wf-stat:last-child { border-right: none; }
+    .wf-stat-val { font-size: 14px; color: #4af; font-weight: 600; }
+    .wf-stat-val.green { color: #4c4; }
+    .wf-stat-val.amber { color: #fa3; }
+
+    /* Sketch annotation */
+    .wf-note {
+      position: absolute;
+      font-size: 12px;
+      color: #fa3;
+      background: rgba(255,163,0,0.08);
+      border: 1px dashed #fa3;
+      border-radius: 4px;
+      padding: 3px 7px;
+      pointer-events: none;
+    }
+    .wf-arrow {
+      position: absolute;
+      font-size: 18px;
+      color: #fa3;
+      pointer-events: none;
+    }
+
+    /* Placeholder box */
+    .wf-placeholder {
+      background: repeating-linear-gradient(
+        45deg, #1e1e1e, #1e1e1e 6px, #232323 6px, #232323 12px
+      );
+      border: 1.5px dashed #444;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #555; font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Tray popup */
+    .wf-tray {
+      background: #1e1e1e;
+      border: 2px solid #333;
+      border-radius: 10px;
+      overflow: hidden;
+      font-family: 'Caveat', cursive;
+    }
+
+    /* Onboarding steps */
+    .wf-step {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid #444;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #777; flex-shrink: 0;
+    }
+    .wf-step.done { border-color: #4c4; color: #4c4; }
+    .wf-step.active { border-color: #4af; color: #4af; background: rgba(68,170,255,0.1); }
+    .wf-step-line { flex: 1; height: 1.5px; background: #333; }
+
+    /* Select/option row */
+    .wf-option {
+      padding: 8px 12px;
+      border: 1.5px solid #333;
+      border-radius: 7px;
+      font-size: 14px;
+      color: #aaa;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .wf-option.selected {
+      border-color: #4af;
+      background: rgba(68,170,255,0.1);
+      color: #4af;
+    }
+    .wf-option-dot {
+      width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor;
+      flex-shrink: 0;
+    }
+    .wf-option.selected .wf-option-dot { background: #4af; }
+
+    /* Log */
+    .wf-log {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.6;
+      color: #555;
+      padding: 8px;
+      background: #161616;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .wf-log .ok { color: #4c4; }
+    .wf-log .info { color: #4af; }
+    .wf-log .warn { color: #fa3; }
+    .wf-log .err { color: #f64; }
+
+    /* Sketch label style */
+    .sketch-label {
+      font-family: 'Caveat', cursive;
+      font-size: 15px;
+      color: #fa3;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .sketch-sub {
+      font-family: 'Caveat', cursive;
+      font-size: 12px;
+      color: #888;
+    }
+
+    /* Canvas override */
+    .dc-canvas-bg { background: #0e0e0e !important; }
+
+    /* slider */
+    .wf-slider-track {
+      width: 100%;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      position: relative;
+    }
+    .wf-slider-fill {
+      height: 100%;
+      background: #4af;
+      border-radius: 2px;
+    }
+    .wf-slider-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #4af; border: 2px solid #1a1a1a;
+      position: absolute; top: -4px;
+    }
+
+    /* toggle */
+    .wf-toggle {
+      width: 34px; height: 18px; border-radius: 9px;
+      background: #333; border: 1.5px solid #444;
+      position: relative; flex-shrink: 0;
+    }
+    .wf-toggle.on { background: rgba(68,170,255,0.3); border-color: #4af; }
+    .wf-toggle-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #666; position: absolute; top: 2px; left: 2px;
+      transition: left .15s;
+    }
+    .wf-toggle.on .wf-toggle-thumb { left: 17px; background: #4af; }
+
+    /* stream viewer overlay */
+    .wf-stream-overlay {
+      position: absolute; bottom: 8px; right: 8px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #aaa;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+
+    /* IP input highlight */
+    .wf-input.highlight { border-color: #4af; box-shadow: 0 0 0 2px rgba(68,170,255,0.2); }
+
+    /* Breadcrumb / section header */
+    .wf-header {
+      padding: 10px 14px 6px;
+      border-bottom: 1.5px solid #2a2a2a;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .wf-header-title { font-size: 17px; color: #ddd; font-weight: 700; }
+    .wf-header-sub { font-size: 12px; color: #666; margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+
+    /* firetv icon */
+    .firetv-icon {
+      width: 32px; height: 32px;
+      border: 2px solid #f64;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+
+    /* progress bar */
+    .wf-progress {
+      width: 100%; height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden;
+    }
+    .wf-progress-fill {
+      height: 100%; border-radius: 3px; background: #4af;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- design-canvas inlined -->
+<script type="text/babel">
+
+// DesignCanvas.jsx — Figma-ish design canvas wrapper
+// Warm gray grid bg + Sections + Artboards + PostIt notes.
+// Artboards are reorderable (grip-drag), labels/titles are inline-editable,
+// and any artboard can be opened in a fullscreen focus overlay (←/→/Esc).
+// State persists to a .design-canvas.state.json sidecar via the host
+// bridge. No assets, no deps.
+//
+// Usage:
+//   <DesignCanvas>
+//     <DCSection id="onboarding" title="Onboarding" subtitle="First-run variants">
+//       <DCArtboard id="a" label="A · Dusk" width={260} height={480}>…</DCArtboard>
+//       <DCArtboard id="b" label="B · Minimal" width={260} height={480}>…</DCArtboard>
+//     </DCSection>
+//   </DesignCanvas>
+
+const DC = {
+  bg: '#f0eee9',
+  grid: 'rgba(0,0,0,0.06)',
+  label: 'rgba(60,50,40,0.7)',
+  title: 'rgba(40,30,20,0.85)',
+  subtitle: 'rgba(60,50,40,0.6)',
+  postitBg: '#fef4a8',
+  postitText: '#5a4a2a',
+  font: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+};
+
+// One-time CSS injection (classes are dc-prefixed so they don't collide with
+// the hosted design's own styles).
+if (typeof document !== 'undefined' && !document.getElementById('dc-styles')) {
+  const s = document.createElement('style');
+  s.id = 'dc-styles';
+  s.textContent = [
+    '.dc-editable{cursor:text;outline:none;white-space:nowrap;border-radius:3px;padding:0 2px;margin:0 -2px}',
+    '.dc-editable:focus{background:#fff;box-shadow:0 0 0 1.5px #c96442}',
+    '[data-dc-slot]{transition:transform .18s cubic-bezier(.2,.7,.3,1)}',
+    '[data-dc-slot].dc-dragging{transition:none;z-index:10;pointer-events:none}',
+    '[data-dc-slot].dc-dragging .dc-card{box-shadow:0 12px 40px rgba(0,0,0,.25),0 0 0 2px #c96442;transform:scale(1.02)}',
+    '.dc-card{transition:box-shadow .15s,transform .15s}',
+    '.dc-card *{scrollbar-width:none}',
+    '.dc-card *::-webkit-scrollbar{display:none}',
+    '.dc-labelrow{display:flex;align-items:center;gap:4px;height:24px}',
+    '.dc-grip{cursor:grab;display:flex;align-items:center;padding:5px 4px;border-radius:4px;transition:background .12s}',
+    '.dc-grip:hover{background:rgba(0,0,0,.08)}',
+    '.dc-grip:active{cursor:grabbing}',
+    '.dc-labeltext{cursor:pointer;border-radius:4px;padding:3px 6px;display:flex;align-items:center;transition:background .12s}',
+    '.dc-labeltext:hover{background:rgba(0,0,0,.05)}',
+    '.dc-expand{position:absolute;bottom:100%;right:0;margin-bottom:5px;z-index:2;opacity:0;transition:opacity .12s,background .12s;',
+    '  width:22px;height:22px;border-radius:5px;border:none;cursor:pointer;padding:0;',
+    '  background:transparent;color:rgba(60,50,40,.7);display:flex;align-items:center;justify-content:center}',
+    '.dc-expand:hover{background:rgba(0,0,0,.06);color:#2a251f}',
+    '[data-dc-slot]:hover .dc-expand{opacity:1}',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+const DCCtx = React.createContext(null);
+
+// ─────────────────────────────────────────────────────────────
+// DesignCanvas — stateful wrapper around the pan/zoom viewport.
+// Owns runtime state (per-section order, renamed titles/labels, focused
+// artboard). Order/titles/labels persist to a .design-canvas.state.json
+// sidecar next to the HTML. Reads go via plain fetch() so the saved
+// arrangement is visible anywhere the HTML + sidecar are served together
+// (omelette preview, direct link, downloaded zip). Writes go through the
+// host's window.omelette bridge — editing requires the omelette runtime.
+// Focus is ephemeral.
+// ─────────────────────────────────────────────────────────────
+const DC_STATE_FILE = '.design-canvas.state.json';
+
+function DesignCanvas({ children, minScale, maxScale, style }) {
+  const [state, setState] = React.useState({ sections: {}, focus: null });
+  // Hold rendering until the sidecar read settles so the saved order/titles
+  // appear on first paint (no source-order flash). didRead gates writes until
+  // the read settles so the empty initial state can't clobber a slow read;
+  // skipNextWrite suppresses the one echo-write that would otherwise follow
+  // hydration.
+  const [ready, setReady] = React.useState(false);
+  const didRead = React.useRef(false);
+  const skipNextWrite = React.useRef(false);
+
+  React.useEffect(() => {
+    let off = false;
+    fetch('./' + DC_STATE_FILE)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((saved) => {
+        if (off || !saved || !saved.sections) return;
+        skipNextWrite.current = true;
+        setState((s) => ({ ...s, sections: saved.sections }));
+      })
+      .catch(() => {})
+      .finally(() => { didRead.current = true; if (!off) setReady(true); });
+    const t = setTimeout(() => { if (!off) setReady(true); }, 150);
+    return () => { off = true; clearTimeout(t); };
+  }, []);
+
+  React.useEffect(() => {
+    if (!didRead.current) return;
+    if (skipNextWrite.current) { skipNextWrite.current = false; return; }
+    const t = setTimeout(() => {
+      window.omelette?.writeFile(DC_STATE_FILE, JSON.stringify({ sections: state.sections })).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [state.sections]);
+
+  // Build registries synchronously from children so FocusOverlay can read
+  // them in the same render. Only direct DCSection > DCArtboard children are
+  // walked — wrapping them in other elements opts out of focus/reorder.
+  const registry = {};     // slotId -> { sectionId, artboard }
+  const sectionMeta = {};  // sectionId -> { title, subtitle, slotIds[] }
+  const sectionOrder = [];
+  React.Children.forEach(children, (sec) => {
+    if (!sec || sec.type !== DCSection) return;
+    const sid = sec.props.id ?? sec.props.title;
+    if (!sid) return;
+    sectionOrder.push(sid);
+    const persisted = state.sections[sid] || {};
+    const srcIds = [];
+    React.Children.forEach(sec.props.children, (ab) => {
+      if (!ab || ab.type !== DCArtboard) return;
+      const aid = ab.props.id ?? ab.props.label;
+      if (!aid) return;
+      registry[`${sid}/${aid}`] = { sectionId: sid, artboard: ab };
+      srcIds.push(aid);
+    });
+    const kept = (persisted.order || []).filter((k) => srcIds.includes(k));
+    sectionMeta[sid] = {
+      title: persisted.title ?? sec.props.title,
+      subtitle: sec.props.subtitle,
+      slotIds: [...kept, ...srcIds.filter((k) => !kept.includes(k))],
+    };
+  });
+
+  const api = React.useMemo(() => ({
+    state,
+    section: (id) => state.sections[id] || {},
+    patchSection: (id, p) => setState((s) => ({
+      ...s,
+      sections: { ...s.sections, [id]: { ...s.sections[id], ...(typeof p === 'function' ? p(s.sections[id] || {}) : p) } },
+    })),
+    setFocus: (slotId) => setState((s) => ({ ...s, focus: slotId })),
+  }), [state]);
+
+  // Esc exits focus; any outside pointerdown commits an in-progress rename.
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') api.setFocus(null); };
+    const onPd = (e) => {
+      const ae = document.activeElement;
+      if (ae && ae.isContentEditable && !ae.contains(e.target)) ae.blur();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPd, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPd, true);
+    };
+  }, [api]);
+
+  return (
+    <DCCtx.Provider value={api}>
+      <DCViewport minScale={minScale} maxScale={maxScale} style={style}>{ready && children}</DCViewport>
+      {state.focus && registry[state.focus] && (
+        <DCFocusOverlay entry={registry[state.focus]} sectionMeta={sectionMeta} sectionOrder={sectionOrder} />
+      )}
+    </DCCtx.Provider>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DCViewport — transform-based pan/zoom (internal)
+//
+// Input mapping (Figma-style):
+//   • trackpad pinch  → zoom   (ctrlKey wheel; Safari gesture* events)
+//   • trackpad scroll → pan    (two-finger)
+//   • mouse wheel     → zoom   (notched; distinguished from trackpad scroll)
+//   • middle-drag / primary-drag-on-bg → pan
+//
+// Transform state lives in a ref and is written straight to the DOM
+// (translate3d + will-change) so wheel ticks don't go through React —
+// keeps pans at 60fps on dense canvases.
+// ─────────────────────────────────────────────────────────────
+function DCViewport({ children, minScale = 0.1, maxScale = 8, style = {} }) {
+  const vpRef = React.useRef(null);
+  const worldRef = React.useRef(null);
+  const tf = React.useRef({ x: 0, y: 0, scale: 1 });
+
+  const apply = React.useCallback(() => {
+    const { x, y, scale } = tf.current;
+    const el = worldRef.current;
+    if (el) el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  }, []);
+
+  React.useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+
+    const zoomAt = (cx, cy, factor) => {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const t = tf.current;
+      const next = Math.min(maxScale, Math.max(minScale, t.scale * factor));
+      const k = next / t.scale;
+      // keep the world point under the cursor fixed
+      t.x = px - (px - t.x) * k;
+      t.y = py - (py - t.y) * k;
+      t.scale = next;
+      apply();
+    };
+
+    // Mouse-wheel vs trackpad-scroll heuristic. A physical wheel sends
+    // line-mode deltas (Firefox) or large integer pixel deltas with no X
+    // component (Chrome/Safari, typically multiples of 100/120). Trackpad
+    // two-finger scroll sends small/fractional pixel deltas, often with
+    // non-zero deltaX. ctrlKey is set by the browser for trackpad pinch.
+    const isMouseWheel = (e) =>
+      e.deltaMode !== 0 ||
+      (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (isGesturing) return; // Safari: gesture* owns the pinch — discard concurrent wheels
+      if (e.ctrlKey) {
+        // trackpad pinch (or explicit ctrl+wheel)
+        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      } else if (isMouseWheel(e)) {
+        // notched mouse wheel — fixed-ratio step per click
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18));
+      } else {
+        // trackpad two-finger scroll — pan
+        tf.current.x -= e.deltaX;
+        tf.current.y -= e.deltaY;
+        apply();
+      }
+    };
+
+    // Safari sends native gesture* events for trackpad pinch with a smooth
+    // e.scale; preferring these over the ctrl+wheel fallback gives a much
+    // better feel there. No-ops on other browsers. Safari also fires
+    // ctrlKey wheel events during the same pinch — isGesturing makes
+    // onWheel drop those entirely so they neither zoom nor pan.
+    let gsBase = 1;
+    let isGesturing = false;
+    const onGestureStart = (e) => { e.preventDefault(); isGesturing = true; gsBase = tf.current.scale; };
+    const onGestureChange = (e) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, (gsBase * e.scale) / tf.current.scale);
+    };
+    const onGestureEnd = (e) => { e.preventDefault(); isGesturing = false; };
+
+    // Drag-pan: middle button anywhere, or primary button on canvas
+    // background (anything that isn't an artboard or an inline editor).
+    let drag = null;
+    const onPointerDown = (e) => {
+      const onBg = !e.target.closest('[data-dc-slot], .dc-editable');
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault();
+      vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    };
+    const onPointerMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.current.x += e.clientX - drag.lx;
+      tf.current.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY;
+      apply();
+    };
+    const onPointerUp = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      vp.releasePointerCapture(e.pointerId);
+      drag = null;
+      vp.style.cursor = '';
+    };
+
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    vp.addEventListener('gesturestart', onGestureStart, { passive: false });
+    vp.addEventListener('gesturechange', onGestureChange, { passive: false });
+    vp.addEventListener('gestureend', onGestureEnd, { passive: false });
+    vp.addEventListener('pointerdown', onPointerDown);
+    vp.addEventListener('pointermove', onPointerMove);
+    vp.addEventListener('pointerup', onPointerUp);
+    vp.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      vp.removeEventListener('wheel', onWheel);
+      vp.removeEventListener('gesturestart', onGestureStart);
+      vp.removeEventListener('gesturechange', onGestureChange);
+      vp.removeEventListener('gestureend', onGestureEnd);
+      vp.removeEventListener('pointerdown', onPointerDown);
+      vp.removeEventListener('pointermove', onPointerMove);
+      vp.removeEventListener('pointerup', onPointerUp);
+      vp.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [apply, minScale, maxScale]);
+
+  const gridSvg = `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='${encodeURIComponent(DC.grid)}' stroke-width='1'/%3E%3C/svg%3E")`;
+  return (
+    <div
+      ref={vpRef}
+      className="design-canvas"
+      style={{
+        height: '100vh', width: '100vw',
+        background: DC.bg,
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
+        touchAction: 'none',
+        position: 'relative',
+        fontFamily: DC.font,
+        boxSizing: 'border-box',
+        ...style,
+      }}
+    >
+      <div
+        ref={worldRef}
+        style={{
+          position: 'absolute', top: 0, left: 0,
+          transformOrigin: '0 0',
+          willChange: 'transform',
+          width: 'max-content', minWidth: '100%',
+          minHeight: '100%',
+          padding: '60px 0 80px',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: -6000, backgroundImage: gridSvg, backgroundSize: '120px 120px', pointerEvents: 'none', zIndex: -1 }} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DCSection — editable title + h-row of artboards in persisted order
+// ─────────────────────────────────────────────────────────────
+function DCSection({ id, title, subtitle, children, gap = 48 }) {
+  const ctx = React.useContext(DCCtx);
+  const sid = id ?? title;
+  const all = React.Children.toArray(children);
+  const artboards = all.filter((c) => c && c.type === DCArtboard);
+  const rest = all.filter((c) => !(c && c.type === DCArtboard));
+  const srcOrder = artboards.map((a) => a.props.id ?? a.props.label);
+  const sec = (ctx && sid && ctx.section(sid)) || {};
+
+  const order = React.useMemo(() => {
+    const kept = (sec.order || []).filter((k) => srcOrder.includes(k));
+    return [...kept, ...srcOrder.filter((k) => !kept.includes(k))];
+  }, [sec.order, srcOrder.join('|')]);
+
+  const byId = Object.fromEntries(artboards.map((a) => [a.props.id ?? a.props.label, a]));
+
+  return (
+    <div data-dc-section={sid} style={{ marginBottom: 80, position: 'relative' }}>
+      <div style={{ padding: '0 60px 56px' }}>
+        <DCEditable tag="div" value={sec.title ?? title}
+          onChange={(v) => ctx && sid && ctx.patchSection(sid, { title: v })}
+          style={{ fontSize: 28, fontWeight: 600, color: DC.title, letterSpacing: -0.4, marginBottom: 6, display: 'inline-block' }} />
+        {subtitle && <div style={{ fontSize: 16, color: DC.subtitle }}>{subtitle}</div>}
+      </div>
+      <div style={{ display: 'flex', gap, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+        {order.map((k) => (
+          <DCArtboardFrame key={k} sectionId={sid} artboard={byId[k]} order={order}
+            label={(sec.labels || {})[k] ?? byId[k].props.label}
+            onRename={(v) => ctx && ctx.patchSection(sid, (x) => ({ labels: { ...x.labels, [k]: v } }))}
+            onReorder={(next) => ctx && ctx.patchSection(sid, { order: next })}
+            onFocus={() => ctx && ctx.setFocus(`${sid}/${k}`)} />
+        ))}
+      </div>
+      {rest}
+    </div>
+  );
+}
+
+// DCArtboard — marker; rendered by DCArtboardFrame via DCSection.
+function DCArtboard() { return null; }
+
+function DCArtboardFrame({ sectionId, artboard, label, order, onRename, onReorder, onFocus }) {
+  const { id: rawId, label: rawLabel, width = 260, height = 480, children, style = {} } = artboard.props;
+  const id = rawId ?? rawLabel;
+  const ref = React.useRef(null);
+
+  // Live drag-reorder: dragged card sticks to cursor; siblings slide into
+  // their would-be slots in real time via transforms. DOM order only
+  // changes on drop.
+  const onGripDown = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const me = ref.current;
+    // translateX is applied in local (pre-scale) space but pointer deltas and
+    // getBoundingClientRect().left are screen-space — divide by the viewport's
+    // current scale so the dragged card tracks the cursor at any zoom level.
+    const scale = me.getBoundingClientRect().width / me.offsetWidth || 1;
+    const peers = Array.from(document.querySelectorAll(`[data-dc-section="${sectionId}"] [data-dc-slot]`));
+    const homes = peers.map((el) => ({ el, id: el.dataset.dcSlot, x: el.getBoundingClientRect().left }));
+    const slotXs = homes.map((h) => h.x);
+    const startIdx = order.indexOf(id);
+    const startX = e.clientX;
+    let liveOrder = order.slice();
+    me.classList.add('dc-dragging');
+
+    const layout = () => {
+      for (const h of homes) {
+        if (h.id === id) continue;
+        const slot = liveOrder.indexOf(h.id);
+        h.el.style.transform = `translateX(${(slotXs[slot] - h.x) / scale}px)`;
+      }
+    };
+
+    const move = (ev) => {
+      const dx = ev.clientX - startX;
+      me.style.transform = `translateX(${dx / scale}px)`;
+      const cur = homes[startIdx].x + dx;
+      let nearest = 0, best = Infinity;
+      for (let i = 0; i < slotXs.length; i++) {
+        const d = Math.abs(slotXs[i] - cur);
+        if (d < best) { best = d; nearest = i; }
+      }
+      if (liveOrder.indexOf(id) !== nearest) {
+        liveOrder = order.filter((k) => k !== id);
+        liveOrder.splice(nearest, 0, id);
+        layout();
+      }
+    };
+
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      const finalSlot = liveOrder.indexOf(id);
+      me.classList.remove('dc-dragging');
+      me.style.transform = `translateX(${(slotXs[finalSlot] - homes[startIdx].x) / scale}px)`;
+      // After the settle transition, kill transitions + clear transforms +
+      // commit the reorder in the same frame so there's no visual snap-back.
+      setTimeout(() => {
+        for (const h of homes) { h.el.style.transition = 'none'; h.el.style.transform = ''; }
+        if (liveOrder.join('|') !== order.join('|')) onReorder(liveOrder);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          for (const h of homes) h.el.style.transition = '';
+        }));
+      }, 180);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div ref={ref} data-dc-slot={id} style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="dc-labelrow" style={{ position: 'absolute', bottom: '100%', left: -4, marginBottom: 4, color: DC.label }}>
+        <div className="dc-grip" onPointerDown={onGripDown} title="Drag to reorder">
+          <svg width="9" height="13" viewBox="0 0 9 13" fill="currentColor"><circle cx="2" cy="2" r="1.1"/><circle cx="7" cy="2" r="1.1"/><circle cx="2" cy="6.5" r="1.1"/><circle cx="7" cy="6.5" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="7" cy="11" r="1.1"/></svg>
+        </div>
+        <div className="dc-labeltext" onClick={onFocus} title="Click to focus">
+          <DCEditable value={label} onChange={onRename} onClick={(e) => e.stopPropagation()}
+            style={{ fontSize: 15, fontWeight: 500, color: DC.label, lineHeight: 1 }} />
+        </div>
+      </div>
+      <button className="dc-expand" onClick={onFocus} onPointerDown={(e) => e.stopPropagation()} title="Focus">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M7 1h4v4M5 11H1V7M11 1L7.5 4.5M1 11l3.5-3.5"/></svg>
+      </button>
+      <div className="dc-card"
+        style={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06)', overflow: 'hidden', width, height, background: '#fff', ...style }}>
+        {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 13, fontFamily: DC.font }}>{id}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Inline rename — commits on blur or Enter.
+function DCEditable({ value, onChange, style, tag = 'span', onClick }) {
+  const T = tag;
+  return (
+    <T className="dc-editable" contentEditable suppressContentEditableWarning
+      onClick={onClick}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={(e) => onChange && onChange(e.currentTarget.textContent)}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      style={style}>{value}</T>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Focus mode — overlay one artboard; ←/→ within section, ↑/↓ across
+// sections, Esc or backdrop click to exit.
+// ─────────────────────────────────────────────────────────────
+function DCFocusOverlay({ entry, sectionMeta, sectionOrder }) {
+  const ctx = React.useContext(DCCtx);
+  const { sectionId, artboard } = entry;
+  const sec = ctx.section(sectionId);
+  const meta = sectionMeta[sectionId];
+  const peers = meta.slotIds;
+  const aid = artboard.props.id ?? artboard.props.label;
+  const idx = peers.indexOf(aid);
+  const secIdx = sectionOrder.indexOf(sectionId);
+
+  const go = (d) => { const n = peers[(idx + d + peers.length) % peers.length]; if (n) ctx.setFocus(`${sectionId}/${n}`); };
+  const goSection = (d) => {
+    const ns = sectionOrder[(secIdx + d + sectionOrder.length) % sectionOrder.length];
+    const first = sectionMeta[ns] && sectionMeta[ns].slotIds[0];
+    if (first) ctx.setFocus(`${ns}/${first}`);
+  };
+
+  React.useEffect(() => {
+    const k = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); goSection(-1); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); goSection(1); }
+    };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  });
+
+  const { width = 260, height = 480, children } = artboard.props;
+  const [vp, setVp] = React.useState({ w: window.innerWidth, h: window.innerHeight });
+  React.useEffect(() => { const r = () => setVp({ w: window.innerWidth, h: window.innerHeight }); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r); }, []);
+  const scale = Math.max(0.1, Math.min((vp.w - 200) / width, (vp.h - 260) / height, 2));
+
+  const [ddOpen, setDd] = React.useState(false);
+  const Arrow = ({ dir, onClick }) => (
+    <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+      style={{ position: 'absolute', top: '50%', [dir]: 28, transform: 'translateY(-50%)',
+        border: 'none', background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.9)',
+        width: 44, height: 44, borderRadius: 22, fontSize: 18, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s' }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.18)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d={dir === 'left' ? 'M11 3L5 9l6 6' : 'M7 3l6 6-6 6'} /></svg>
+    </button>
+  );
+
+  // Portal to body so position:fixed is the real viewport regardless of any
+  // transform on DesignCanvas's ancestors (including the canvas zoom itself).
+  return ReactDOM.createPortal(
+    <div onClick={() => ctx.setFocus(null)}
+      onWheel={(e) => e.preventDefault()}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(24,20,16,.6)', backdropFilter: 'blur(14px)',
+        fontFamily: DC.font, color: '#fff' }}>
+
+      {/* top bar: section dropdown (left) · close (right) */}
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 72, display: 'flex', alignItems: 'flex-start', padding: '16px 20px 0', gap: 16 }}>
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setDd((o) => !o)}
+            style={{ border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', padding: '6px 8px',
+              borderRadius: 6, textAlign: 'left', fontFamily: 'inherit' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.3 }}>{meta.title}</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ opacity: .7 }}><path d="M2 4l3.5 3.5L9 4"/></svg>
+            </span>
+            {meta.subtitle && <span style={{ display: 'block', fontSize: 13, opacity: .6, fontWeight: 400, marginTop: 2 }}>{meta.subtitle}</span>}
+          </button>
+          {ddOpen && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#2a251f', borderRadius: 8,
+              boxShadow: '0 8px 32px rgba(0,0,0,.4)', padding: 4, minWidth: 200, zIndex: 10 }}>
+              {sectionOrder.map((sid) => (
+                <button key={sid} onClick={() => { setDd(false); const f = sectionMeta[sid].slotIds[0]; if (f) ctx.setFocus(`${sid}/${f}`); }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                    background: sid === sectionId ? 'rgba(255,255,255,.1)' : 'transparent', color: '#fff',
+                    padding: '8px 12px', borderRadius: 5, fontSize: 14, fontWeight: sid === sectionId ? 600 : 400, fontFamily: 'inherit' }}>
+                  {sectionMeta[sid].title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => ctx.setFocus(null)}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,.7)', width: 32, height: 32,
+            borderRadius: 16, fontSize: 20, cursor: 'pointer', lineHeight: 1, transition: 'background .12s' }}>×</button>
+      </div>
+
+      {/* card centered, label + index below — only the card itself stops
+          propagation so any backdrop click (including the margins around
+          the card) exits focus */}
+      <div
+        style={{ position: 'absolute', top: 64, bottom: 56, left: 100, right: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ width: width * scale, height: height * scale, position: 'relative' }}>
+          <div style={{ width, height, transform: `scale(${scale})`, transformOrigin: 'top left', background: '#fff', borderRadius: 2, overflow: 'hidden',
+            boxShadow: '0 20px 80px rgba(0,0,0,.4)' }}>
+            {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>{aid}</div>}
+          </div>
+        </div>
+        <div onClick={(e) => e.stopPropagation()} style={{ fontSize: 14, fontWeight: 500, opacity: .85, textAlign: 'center' }}>
+          {(sec.labels || {})[aid] ?? artboard.props.label}
+          <span style={{ opacity: .5, marginLeft: 10, fontVariantNumeric: 'tabular-nums' }}>{idx + 1} / {peers.length}</span>
+        </div>
+      </div>
+
+      <Arrow dir="left" onClick={() => go(-1)} />
+      <Arrow dir="right" onClick={() => go(1)} />
+
+      {/* dots */}
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
+        {peers.map((p, i) => (
+          <button key={p} onClick={() => ctx.setFocus(`${sectionId}/${p}`)}
+            style={{ border: 'none', padding: 0, cursor: 'pointer', width: 6, height: 6, borderRadius: 3,
+              background: i === idx ? '#fff' : 'rgba(255,255,255,.3)' }} />
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Post-it — absolute-positioned sticky note
+// ─────────────────────────────────────────────────────────────
+function DCPostIt({ children, top, left, right, bottom, rotate = -2, width = 180 }) {
+  return (
+    <div style={{
+      position: 'absolute', top, left, right, bottom, width,
+      background: DC.postitBg, padding: '14px 16px',
+      fontFamily: '"Comic Sans MS", "Marker Felt", "Segoe Print", cursive',
+      fontSize: 14, lineHeight: 1.4, color: DC.postitText,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+      transform: `rotate(${rotate}deg)`,
+      zIndex: 5,
+    }}>{children}</div>
+  );
+}
+
+Object.assign(window, { DesignCanvas, DCSection, DCArtboard, DCPostIt });
+
+
+</script>
+
+<!-- tweaks-panel inlined -->
+<script type="text/babel">
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-noncommentable=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">{children}</div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+function TweakColor({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <input type="color" className="twk-swatch" value={value}
+             onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+</script>
+
+<!-- main app -->
+<script type="text/babel">
+const { useState } = React;
+
+/* ─────────────────────────────────────────────
+   SHARED PRIMITIVES
+───────────────────────────────────────────── */
+const WfWin = ({ width, height, title, badge, children, style }) => (
+  <div className="wf-win" style={{ width, height, ...style }}>
+    <div className="wf-titlebar">
+      <div className="wf-dots">
+        <div className="wf-dot red" />
+        <div className="wf-dot yel" />
+        <div className="wf-dot grn" />
+      </div>
+      <span className="wf-title">{title || 'Emiscreen'}</span>
+      {badge && <span className="wf-badge">{badge}</span>}
+    </div>
+    {children}
+  </div>
+);
+
+const Toggle = ({ on }) => (
+  <div className={`wf-toggle ${on ? 'on' : ''}`}>
+    <div className="wf-toggle-thumb" />
+  </div>
+);
+
+const StatusDot = ({ state }) => {
+  const cls = state === 'connected' ? 'green' : state === 'connecting' ? 'amber' : 'red';
+  const label = state === 'connected' ? 'Connected' : state === 'connecting' ? 'Connecting...' : 'Disconnected';
+  return (
+    <div className="wf-status">
+      <div className={`wf-dot-status ${cls}`} />
+      <span style={{ fontSize: 13 }}>{label}</span>
+    </div>
+  );
+};
+
+const LogLine = ({ type, children }) => (
+  <div className={type}>&gt; {children}</div>
+);
+
+const SliderRow = ({ label, value, pct }) => (
+  <div className="wf-col" style={{ gap: 4 }}>
+    <div className="wf-row">
+      <span style={{ fontSize: 12, color: '#888' }}>{label}</span>
+      <span style={{ fontSize: 12, color: '#4af', marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontWeight: 600 }}>{value}</span>
+    </div>
+    <div className="wf-slider-track">
+      <div className="wf-slider-fill" style={{ width: `${pct}%` }} />
+      <div className="wf-slider-thumb" style={{ left: `calc(${pct}% - 6px)` }} />
+    </div>
+  </div>
+);
+
+const NavIconSvg = ({ id, active }) => {
+  const icons = {
+    home: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M1 6.5L7 1.5L13 6.5V13H9V9H5V13H1V6.5Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+      </svg>
+    ),
+    source: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="2" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M4 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M7 10V12" stroke="currentColor" strokeWidth="1.5"/>
+      </svg>
+    ),
+    tv: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="2.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M4 1L7 3.5L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="10.5" cy="9.5" r="1" fill="currentColor"/>
+      </svg>
+    ),
+    stream: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M3 10.5A6 6 0 0 1 3 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M11 3.5A6 6 0 0 1 11 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M5 8.8A3 3 0 0 1 5 5.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M9 5.2A3 3 0 0 1 9 8.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+    ),
+    settings: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.93 2.93l1.06 1.06M10.01 10.01l1.06 1.06M2.93 11.07l1.06-1.06M10.01 3.99l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+  };
+  return <span style={{ color: active ? '#4af' : '#666' }}>{icons[id]}</span>;
+};
+
+/* ─────────────────────────────────────────────
+   VARIANT A: Sidebar layout screens
+───────────────────────────────────────────── */
+
+// A1 — Onboarding
+const A_Onboarding = () => (
+  <WfWin width={680} height={430} title="Emiscreen — First Run" badge="v1.0.0">
+    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20, height: 'calc(100% - 36px)' }}>
+      <div style={{ textAlign: 'center', paddingBottom: 8 }}>
+        <div style={{ fontSize: 26, fontWeight: 700, color: '#eee', marginBottom: 4 }}>👋 Welcome to Emiscreen</div>
+        <div style={{ fontSize: 14, color: '#777' }}>Remote Display via WebRTC — cast any desktop to any screen</div>
+      </div>
+      {/* Steps */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px' }}>
+        <div className="wf-step done">✓</div>
+        <div className="wf-step-line" style={{ background: '#4af' }} />
+        <div className="wf-step active">2</div>
+        <div className="wf-step-line" />
+        <div className="wf-step">3</div>
+        <div className="wf-step-line" />
+        <div className="wf-step">4</div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: -10 }}>
+        {['Install', 'Source', 'FireTV', 'Go!'].map((s, i) => (
+          <span key={s} style={{ flex: 1, textAlign: 'center', fontSize: 12, color: i === 1 ? '#4af' : i === 0 ? '#4c4' : '#555' }}>{s}</span>
+        ))}
+      </div>
+      {/* Step content */}
+      <div className="wf-section" style={{ margin: 0 }}>
+        <div className="wf-section-title">Step 2 — Select capture source</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { id: 'ubuntu-desktop', label: 'Ubuntu / Linux Desktop', sub: 'x11grab · display :0' },
+            { id: 'windows-pc', label: 'Windows PC', sub: 'gdigrab · full desktop' },
+            { id: 'nas-omv', label: 'NAS / Headless', sub: 'Xvfb · virtual display :99' },
+          ].map((s, i) => (
+            <div key={s.id} className={`wf-option ${i === 1 ? 'selected' : ''}`}>
+              <div className="wf-option-dot" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14 }}>{s.label}</div>
+                <div style={{ fontSize: 11, color: '#666', fontFamily: 'JetBrains Mono', marginTop: 1 }}>{s.sub}</div>
+              </div>
+              {i === 1 && <span style={{ fontSize: 10, color: '#4af', fontFamily: 'JetBrains Mono' }}>AUTO-DETECTED</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="wf-row" style={{ marginTop: 'auto' }}>
+        <button className="wf-btn" style={{ minWidth: 80 }}>← Back</button>
+        <div style={{ flex: 1 }} />
+        <button className="wf-btn primary" style={{ minWidth: 120 }}>Continue →</button>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// A2 — Dashboard
+const A_Dashboard = () => (
+  <WfWin width={720} height={480} title="Emiscreen — Dashboard">
+    <div className="wf-layout">
+      {/* Sidebar */}
+      <div className="wf-sidebar">
+        <div style={{ fontSize: 10, color: '#555', marginBottom: 6, fontFamily: 'JetBrains Mono' }}>EMI</div>
+        {[
+          { id: 'home', label: 'Dashboard', active: true },
+          { id: 'source', label: 'Source' },
+          { id: 'tv', label: 'FireTV' },
+          { id: 'stream', label: 'Stream' },
+          { id: 'settings', label: 'Settings' },
+        ].map(n => (
+          <div key={n.id} className={`wf-nav-item ${n.active ? 'active' : ''}`} title={n.label}>
+            <NavIconSvg id={n.id} active={n.active} />
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4c4', boxShadow: '0 0 6px #4c4' }} />
+      </div>
+      {/* Main */}
+      <div className="wf-content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="wf-header">
+          <div className="wf-header-title">Dashboard</div>
+          <StatusDot state="connected" />
+          <div className="wf-header-sub">uptime 02:14:33</div>
+        </div>
+        <div style={{ padding: 10, flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Top cards */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {/* Source card */}
+            <div className="wf-section" style={{ flex: 1, margin: 0 }}>
+              <div className="wf-section-title">Source</div>
+              <div className="wf-row" style={{ gap: 8, marginBottom: 6 }}>
+                <div className="wf-nav-icon" style={{ color: '#4af', width: 22, height: 22 }}><NavIconSvg id="source" active /></div>
+                <span style={{ fontSize: 14, color: '#ddd' }}>windows-pc</span>
+                <Toggle on={true} />
+              </div>
+              <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#666' }}>gdigrab · 1920×1080 · 30fps</div>
+            </div>
+            {/* FireTV card */}
+            <div className="wf-section" style={{ flex: 1, margin: 0, borderColor: '#4af', background: 'rgba(68,170,255,0.05)' }}>
+              <div className="wf-section-title" style={{ color: '#4af' }}>FireTV Target ★</div>
+              <div className="wf-row" style={{ gap: 8, marginBottom: 6 }}>
+                <div className="firetv-icon" style={{ borderColor: '#4af', fontSize: 14 }}>📺</div>
+                <div>
+                  <div style={{ fontSize: 13, color: '#ddd' }}>192.168.1.42</div>
+                  <div style={{ fontSize: 10, color: '#4af', fontFamily: 'JetBrains Mono' }}>ADB · CONNECTED</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Big action */}
+          <button className="wf-btn success" style={{ width: '100%', padding: '12px', fontSize: 18 }}>
+            ⏵  Start Streaming
+          </button>
+          {/* Stats */}
+          <div className="wf-section" style={{ margin: 0 }}>
+            <div className="wf-section-title">Live Stats</div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {[
+                { label: 'Latency', val: '48ms', cls: 'green' },
+                { label: 'FPS', val: '30', cls: '' },
+                { label: 'Bitrate', val: '3.8M', cls: '' },
+                { label: 'Resolution', val: '1080p', cls: '' },
+                { label: 'CPU', val: '18%', cls: 'green' },
+                { label: 'WebRTC', val: 'P2P', cls: 'green' },
+              ].map(s => (
+                <div key={s.label} style={{ flex: 1 }}>
+                  <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: '#555', textTransform: 'uppercase' }}>{s.label}</div>
+                  <div className={`wf-stat-val ${s.cls}`} style={{ fontFamily: 'JetBrains Mono', fontSize: 15 }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Log */}
+          <div className="wf-log" style={{ flex: 1 }}>
+            <LogLine type="ok">[10:22:01] FireTV connected — ADB 192.168.1.42:5555</LogLine>
+            <LogLine type="info">[10:22:02] WebRTC offer sent · waiting for answer...</LogLine>
+            <LogLine type="ok">[10:22:02] ICE connected · P2P established</LogLine>
+            <LogLine type="info">[10:22:03] Streaming 1920×1080 @ 30fps H.264</LogLine>
+            <LogLine type="ok">[10:24:15] Latency P95: 48ms ✓</LogLine>
+          </div>
+        </div>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// A3 — Source Config
+const A_SourceConfig = () => (
+  <WfWin width={720} height={480} title="Emiscreen — Source Configuration">
+    <div className="wf-layout">
+      <div className="wf-sidebar">
+        <div style={{ fontSize: 10, color: '#555', marginBottom: 6, fontFamily: 'JetBrains Mono' }}>EMI</div>
+        {[
+          { id: 'home', label: 'Dashboard' },
+          { id: 'source', label: 'Source', active: true },
+          { id: 'tv', label: 'FireTV' },
+          { id: 'stream', label: 'Stream' },
+          { id: 'settings', label: 'Settings' },
+        ].map(n => (
+          <div key={n.id} className={`wf-nav-item ${n.active ? 'active' : ''}`} title={n.label}>
+            <NavIconSvg id={n.id} active={n.active} />
+          </div>
+        ))}
+      </div>
+      <div className="wf-content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="wf-header">
+          <div className="wf-header-title">Source Configuration</div>
+          <div className="wf-header-sub">windows-pc</div>
+        </div>
+        <div style={{ padding: 10, flex: 1, overflowY: 'auto', display: 'flex', gap: 10 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Source select */}
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Capture Device</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { id: 'ubuntu-desktop', label: 'Ubuntu Desktop', sub: 'x11grab :0' },
+                  { id: 'windows-pc', label: 'Windows PC', sub: 'gdigrab', sel: true },
+                  { id: 'nas-omv', label: 'NAS / Headless', sub: 'Xvfb :99' },
+                ].map(s => (
+                  <div key={s.id} className={`wf-option ${s.sel ? 'selected' : ''}`} style={{ padding: '6px 10px' }}>
+                    <div className="wf-option-dot" />
+                    <span style={{ fontSize: 13 }}>{s.label}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10, fontFamily: 'JetBrains Mono', color: '#666' }}>{s.sub}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Capture params */}
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Capture Parameters</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <SliderRow label="Resolution" value="1920×1080" pct={80} />
+                <SliderRow label="Frame Rate" value="30 fps" pct={60} />
+                <SliderRow label="Bitrate" value="4 Mbps" pct={50} />
+              </div>
+            </div>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Codec */}
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Codec</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['H.264', 'VP8'].map((c, i) => (
+                  <div key={c} className="wf-option" style={{ flex: 1, padding: '6px', justifyContent: 'center', ...(i === 0 ? { borderColor: '#4af', background: 'rgba(68,170,255,0.1)', color: '#4af' } : {}) }}>
+                    {c}
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: '#555', fontFamily: 'JetBrains Mono', marginTop: 6 }}>H.264 recommended for FireTV HW decode</div>
+            </div>
+            {/* Preview */}
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Preview</div>
+              <div className="wf-placeholder" style={{ height: 100, borderRadius: 6 }}>screen preview</div>
+              <div style={{ marginTop: 6, display: 'flex', gap: 8 }}>
+                <button className="wf-btn" style={{ fontSize: 12, padding: '4px 10px' }}>Test Capture</button>
+                <button className="wf-btn primary" style={{ flex: 1, fontSize: 12, padding: '4px 10px' }}>Apply & Save</button>
+              </div>
+            </div>
+            {/* Toggle options */}
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Options</div>
+              {[
+                { label: 'Hardware acceleration', on: true },
+                { label: 'Cursor capture', on: true },
+                { label: 'Audio capture (future)', on: false },
+              ].map(o => (
+                <div key={o.label} className="wf-row" style={{ marginBottom: 7 }}>
+                  <span style={{ fontSize: 13, color: '#aaa' }}>{o.label}</span>
+                  <div style={{ flex: 1 }} />
+                  <Toggle on={o.on} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// A4 — FireTV Connect (THE key screen)
+const A_FireTV = () => (
+  <WfWin width={720} height={480} title="Emiscreen — FireTV Connection">
+    <div className="wf-layout">
+      <div className="wf-sidebar">
+        <div style={{ fontSize: 10, color: '#555', marginBottom: 6, fontFamily: 'JetBrains Mono' }}>EMI</div>
+        {[
+          { id: 'home' }, { id: 'source' },
+          { id: 'tv', active: true }, { id: 'stream' }, { id: 'settings' },
+        ].map((n, i) => (
+          <div key={i} className={`wf-nav-item ${n.active ? 'active' : ''}`}>
+            <NavIconSvg id={n.id} active={n.active} />
+          </div>
+        ))}
+      </div>
+      <div className="wf-content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="wf-header">
+          <div className="wf-header-title">🔥 FireTV Connection</div>
+          <StatusDot state="connected" />
+          <div className="wf-header-sub">192.168.1.42</div>
+        </div>
+        <div style={{ padding: 10, flex: 1, display: 'flex', gap: 10 }}>
+          {/* Left: connection */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="wf-section" style={{ margin: 0, borderColor: '#4af', background: 'rgba(68,170,255,0.04)' }}>
+              <div className="wf-section-title" style={{ color: '#4af' }}>FireTV Device</div>
+              <label className="wf-input-label">IP Address</label>
+              <div className="wf-row" style={{ gap: 6, marginBottom: 8 }}>
+                <input className="wf-input highlight" defaultValue="192.168.1.42" style={{ flex: 1 }} readOnly />
+                <button className="wf-btn primary" style={{ padding: '5px 12px', fontSize: 13, whiteSpace: 'nowrap' }}>Connect ADB</button>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                {[
+                  { label: 'ADB', state: 'green' },
+                  { label: 'Browser', state: 'green' },
+                  { label: 'Wake', state: 'green' },
+                ].map(s => (
+                  <div key={s.label} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2d2d2d', borderRadius: 5, padding: '5px 8px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: '#555', marginBottom: 3 }}>{s.label}</div>
+                    <div className={`wf-dot-status ${s.state}`} style={{ margin: '0 auto' }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="wf-btn" style={{ flex: 1, fontSize: 12, padding: '5px' }}>Wake TV</button>
+                <button className="wf-btn" style={{ flex: 1, fontSize: 12, padding: '5px' }}>Launch Browser</button>
+                <button className="wf-btn danger" style={{ flex: 1, fontSize: 12, padding: '5px' }}>Disconnect</button>
+              </div>
+            </div>
+            {/* Setup guide */}
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Setup Guide</div>
+              {[
+                { n: 1, text: 'Settings → My Fire TV → About → tap 7×', done: true },
+                { n: 2, text: 'Developer Options → ADB Debugging ON', done: true },
+                { n: 3, text: 'Settings → About → Network → find IP', done: true },
+                { n: 4, text: 'Enter IP above and click Connect ADB', done: true },
+              ].map(s => (
+                <div key={s.n} className="wf-row" style={{ gap: 8, marginBottom: 5 }}>
+                  <div className={`wf-step ${s.done ? 'done' : ''}`} style={{ width: 20, height: 20, fontSize: 10, flexShrink: 0 }}>{s.done ? '✓' : s.n}</div>
+                  <span style={{ fontSize: 12, color: s.done ? '#666' : '#bbb' }}>{s.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Right: D-Pad + log */}
+          <div style={{ width: 220, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">D-Pad Mapping</div>
+              {/* D-Pad visual */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, maxWidth: 120, margin: '6px auto' }}>
+                {['', '▲', '', '◀', '●', '▶', '', '▼', ''].map((k, i) => (
+                  <div key={i} style={{
+                    height: 28, border: k ? '1.5px solid #444' : 'none',
+                    borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, color: k === '●' ? '#4af' : '#888',
+                    background: k ? '#252525' : 'transparent',
+                  }}>{k}</div>
+                ))}
+              </div>
+              {[
+                { key: 'D-Pad Up/Down/L/R', val: 'mousemove ±20px' },
+                { key: 'Center (●)', val: 'mouseclick' },
+                { key: 'Back', val: 'Escape' },
+              ].map(m => (
+                <div key={m.key} className="wf-row" style={{ marginBottom: 4, gap: 6 }}>
+                  <span style={{ fontSize: 10, color: '#888', fontFamily: 'JetBrains Mono' }}>{m.key}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: '#4af', fontFamily: 'JetBrains Mono' }}>{m.val}</span>
+                </div>
+              ))}
+            </div>
+            <div className="wf-section" style={{ margin: 0, flex: 1 }}>
+              <div className="wf-section-title">ADB Log</div>
+              <div className="wf-log">
+                <LogLine type="info">adb connect 192.168.1.42:5555</LogLine>
+                <LogLine type="ok">connected to 192.168.1.42:5555</LogLine>
+                <LogLine type="info">launching browser...</LogLine>
+                <LogLine type="ok">browser launched ✓</LogLine>
+                <LogLine type="ok">display awake ✓</LogLine>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// A5 — Stream Viewer
+const A_StreamViewer = () => (
+  <WfWin width={720} height={480} title="Emiscreen — Streaming">
+    <div style={{ position: 'relative', height: 'calc(100% - 36px)', background: '#000' }}>
+      <div className="wf-placeholder" style={{ width: '100%', height: '100%', borderRadius: 0, fontSize: 18, color: '#333', border: 'none' }}>
+        [  Live Stream · 1920×1080 · WebRTC  ]
+      </div>
+      {/* Top HUD */}
+      <div style={{ position: 'absolute', top: 8, left: 8, right: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid #333', borderRadius: 5, padding: '4px 10px', fontFamily: 'JetBrains Mono', fontSize: 11 }}>
+          <span style={{ color: '#f64', marginRight: 6 }}>⏺</span><span style={{ color: '#eee' }}>LIVE</span>
+        </div>
+        <div style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid #333', borderRadius: 5, padding: '4px 10px', fontFamily: 'JetBrains Mono', fontSize: 11, color: '#aaa' }}>
+          02:14:38
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid #2d2d2d', borderRadius: 5, display: 'flex', gap: 0 }}>
+          {['⏸', '⏹', '⚙', '⛶'].map((ic, i) => (
+            <div key={i} style={{ padding: '4px 10px', fontSize: 14, color: '#aaa', borderRight: i < 3 ? '1px solid #2d2d2d' : 'none', cursor: 'pointer' }}>{ic}</div>
+          ))}
+        </div>
+      </div>
+      {/* Stats overlay */}
+      <div className="wf-stream-overlay">
+        <span style={{ color: '#4c4' }}>48ms latency</span>
+        <span>30 fps</span>
+        <span>3.8 Mbps</span>
+        <span style={{ color: '#aaa' }}>1920×1080</span>
+      </div>
+      {/* FireTV badge */}
+      <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.7)', border: '1px solid #444', borderRadius: 5, padding: '4px 10px', fontFamily: 'JetBrains Mono', fontSize: 11 }}>
+        📺 <span style={{ color: '#4af' }}>192.168.1.42</span> <span style={{ color: '#4c4' }}>ADB ●</span>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// A6 — Settings
+const A_Settings = () => (
+  <WfWin width={720} height={480} title="Emiscreen — Settings">
+    <div className="wf-layout">
+      <div className="wf-sidebar">
+        <div style={{ fontSize: 10, color: '#555', marginBottom: 6, fontFamily: 'JetBrains Mono' }}>EMI</div>
+        {[
+          { id: 'home' }, { id: 'source' }, { id: 'tv' }, { id: 'stream' },
+          { id: 'settings', active: true },
+        ].map((n, i) => (
+          <div key={i} className={`wf-nav-item ${n.active ? 'active' : ''}`}>
+            <NavIconSvg id={n.id} active={n.active} />
+          </div>
+        ))}
+      </div>
+      <div className="wf-content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="wf-header"><div className="wf-header-title">Settings</div></div>
+        <div style={{ padding: 10, flex: 1, display: 'flex', gap: 10, overflowY: 'auto' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Server</div>
+              <label className="wf-input-label">Port</label>
+              <input className="wf-input" defaultValue="8445" style={{ marginBottom: 8 }} readOnly />
+              <label className="wf-input-label">SSL Certificate</label>
+              <div className="wf-row" style={{ gap: 6 }}>
+                <input className="wf-input" defaultValue="certs/cert.pem" readOnly style={{ flex: 1 }} />
+                <button className="wf-btn" style={{ fontSize: 12, padding: '5px 10px', whiteSpace: 'nowrap' }}>Browse</button>
+              </div>
+            </div>
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">Auth</div>
+              {[
+                { label: 'Enable token auth', on: false },
+              ].map(o => (
+                <div key={o.label} className="wf-row" style={{ marginBottom: 7 }}>
+                  <span style={{ fontSize: 13, color: '#aaa' }}>{o.label}</span>
+                  <div style={{ flex: 1 }} />
+                  <Toggle on={o.on} />
+                </div>
+              ))}
+              <label className="wf-input-label">Token (EMISCREEN_TOKEN)</label>
+              <input className="wf-input" defaultValue="••••••••••••" readOnly />
+            </div>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">System</div>
+              {[
+                { label: 'Launch at startup', on: true },
+                { label: 'Start minimized to tray', on: true },
+                { label: 'Auto-reconnect FireTV', on: true },
+                { label: 'Show stats overlay', on: true },
+                { label: 'Dark mode', on: true },
+              ].map(o => (
+                <div key={o.label} className="wf-row" style={{ marginBottom: 7 }}>
+                  <span style={{ fontSize: 13, color: '#aaa' }}>{o.label}</span>
+                  <div style={{ flex: 1 }} />
+                  <Toggle on={o.on} />
+                </div>
+              ))}
+            </div>
+            <div className="wf-section" style={{ margin: 0 }}>
+              <div className="wf-section-title">About</div>
+              <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: '#666', lineHeight: 1.8 }}>
+                <div>Emiscreen v1.0.0</div>
+                <div>Python 3.11 · aiortc · aiohttp</div>
+                <div style={{ color: '#4af' }}>github.com/iCleyvin/emiscreen</div>
+                <div style={{ marginTop: 4, color: '#555' }}>Apache 2.0 · by Cleyvin © 2026</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// A7 — System Tray popup
+const A_Tray = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+    {/* Taskbar bar hint */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a1a', border: '1.5px solid #333', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontFamily: 'JetBrains Mono', color: '#888' }}>
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4c4', boxShadow: '0 0 5px #4c4' }} />
+      EMI
+    </div>
+    {/* Tray popup */}
+    <div className="wf-tray" style={{ width: 240 }}>
+      <div style={{ padding: '10px 12px', borderBottom: '1.5px solid #2d2d2d' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#eee', marginBottom: 3 }}>Emiscreen</div>
+        <StatusDot state="connected" />
+      </div>
+      <div style={{ padding: '8px 0' }}>
+        {[
+          { icon: '📺', label: 'FireTV: 192.168.1.42', sub: 'ADB connected', accent: '#4af' },
+          { icon: '⏸', label: 'Pause Stream' },
+          { icon: '⏹', label: 'Stop Stream', accent: '#f64' },
+          { icon: '⚙', label: 'Open Settings' },
+        ].map((item, i) => (
+          <div key={i} style={{ padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderBottom: i === 0 ? '1px solid #2a2a2a' : 'none' }}>
+            <span style={{ fontSize: 16 }}>{item.icon}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, color: item.accent || '#ccc' }}>{item.label}</div>
+              {item.sub && <div style={{ fontSize: 10, color: '#555', fontFamily: 'JetBrains Mono' }}>{item.sub}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: '6px 14px', borderTop: '1.5px solid #2d2d2d' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#555' }}>30fps · 48ms · 3.8M</span>
+          <div style={{ flex: 1 }} />
+          <span style={{ fontSize: 12, color: '#555', cursor: 'pointer' }}>Quit</span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────
+   VARIANT B: Top-tabs layout screens
+───────────────────────────────────────────── */
+
+const TabBar = ({ tabs, active }) => (
+  <div className="wf-tabs">
+    {tabs.map((t, i) => (
+      <div key={t} className={`wf-tab ${i === active ? 'active' : ''}`}>{t}</div>
+    ))}
+  </div>
+);
+
+// B1 — Onboarding
+const B_Onboarding = () => (
+  <WfWin width={600} height={400} title="Emiscreen Setup" badge="v1.0.0">
+    <div style={{ height: 'calc(100% - 36px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 20 }}>
+      <div style={{ fontSize: 28, fontWeight: 700, color: '#eee', textAlign: 'center' }}>
+        Emiscreen
+        <div style={{ fontSize: 13, color: '#666', fontWeight: 400, marginTop: 2 }}>Remote Display via WebRTC</div>
+      </div>
+      {/* Big centered step */}
+      <div style={{ width: '100%', maxWidth: 420, background: '#1e1e1e', border: '2px solid #2d2d2d', borderRadius: 12, padding: 20 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+          {['Detect', 'Source', 'FireTV', 'Done'].map((s, i) => (
+            <React.Fragment key={s}>
+              <div className={`wf-step ${i === 0 ? 'done' : i === 1 ? 'active' : ''}`} style={{ width: 24, height: 24, fontSize: 11, flexShrink: 0 }}>{i === 0 ? '✓' : i + 1}</div>
+              <span style={{ fontSize: 12, color: i === 1 ? '#4af' : i === 0 ? '#4c4' : '#555', flexShrink: 0 }}>{s}</span>
+              {i < 3 && <div className="wf-step-line" style={{ background: i === 0 ? '#4af' : '#2d2d2d' }} />}
+            </React.Fragment>
+          ))}
+        </div>
+        <div style={{ fontSize: 15, color: '#ddd', marginBottom: 12, fontWeight: 600 }}>Choose your capture source</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[
+            { id: 'win', label: 'Windows', sub: 'gdigrab', sel: true },
+            { id: 'lin', label: 'Linux', sub: 'x11grab' },
+            { id: 'nas', label: 'NAS', sub: 'Xvfb' },
+          ].map(s => (
+            <div key={s.id} style={{ flex: 1, padding: '10px 8px', border: `1.5px solid ${s.sel ? '#4af' : '#333'}`, borderRadius: 8, textAlign: 'center', background: s.sel ? 'rgba(68,170,255,0.08)' : '#1a1a1a', cursor: 'pointer' }}>
+              <div style={{ fontSize: 13, color: s.sel ? '#4af' : '#bbb', fontWeight: s.sel ? 700 : 400 }}>{s.label}</div>
+              <div style={{ fontSize: 10, color: '#555', fontFamily: 'JetBrains Mono', marginTop: 2 }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="wf-row" style={{ gap: 12, width: '100%', maxWidth: 420 }}>
+        <button className="wf-btn" style={{ flex: 1 }}>← Back</button>
+        <button className="wf-btn primary" style={{ flex: 2 }}>Next: FireTV Setup →</button>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// B2 — Dashboard (top tabs)
+const B_Dashboard = () => (
+  <WfWin width={720} height={460} title="Emiscreen">
+    <div style={{ height: 'calc(100% - 36px)', display: 'flex', flexDirection: 'column' }}>
+      <TabBar tabs={['Dashboard', 'Source', '🔥 FireTV', 'Stream', 'Settings']} active={0} />
+      <div style={{ flex: 1, padding: 12, display: 'flex', gap: 10, overflow: 'hidden' }}>
+        {/* Left column */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Big connect button */}
+          <div className="wf-section" style={{ margin: 0, borderColor: '#4af', background: 'rgba(68,170,255,0.04)', textAlign: 'center', padding: '16px 12px' }}>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>FIRETV TARGET</div>
+            <div className="firetv-icon" style={{ margin: '0 auto 8px', borderColor: '#4af', fontSize: 20 }}>📺</div>
+            <div style={{ fontSize: 16, color: '#4af', fontWeight: 700, marginBottom: 2 }}>192.168.1.42</div>
+            <StatusDot state="connected" />
+            <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+              <button className="wf-btn success" style={{ flex: 1, fontSize: 16, padding: '10px 0' }}>⏵ Start Stream</button>
+            </div>
+          </div>
+          <div className="wf-section" style={{ margin: 0 }}>
+            <div className="wf-section-title">Source</div>
+            <div className="wf-row">
+              <NavIconSvg id="source" active />
+              <span style={{ fontSize: 14, color: '#ddd', marginLeft: 6 }}>windows-pc</span>
+              <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: 10, color: '#666' }}>1920×1080 · 30fps</span>
+              <Toggle on={true} />
+            </div>
+          </div>
+        </div>
+        {/* Right column */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="wf-section" style={{ margin: 0 }}>
+            <div className="wf-section-title">Live Metrics</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {[
+                { l: 'Latency', v: '48ms', c: 'green' },
+                { l: 'FPS', v: '30', c: '' },
+                { l: 'Bitrate', v: '3.8M', c: '' },
+                { l: 'Resolution', v: '1080p', c: '' },
+                { l: 'CPU', v: '18%', c: 'green' },
+                { l: 'P2P', v: 'direct', c: 'green' },
+              ].map(s => (
+                <div key={s.l} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 5, padding: '6px 8px' }}>
+                  <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: '#555' }}>{s.l}</div>
+                  <div className={`wf-stat-val ${s.c}`} style={{ fontFamily: 'JetBrains Mono', fontSize: 16 }}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="wf-section" style={{ margin: 0, flex: 1 }}>
+            <div className="wf-section-title">Activity Log</div>
+            <div className="wf-log">
+              <LogLine type="ok">[10:22:01] FireTV ADB connected ✓</LogLine>
+              <LogLine type="ok">[10:22:02] ICE P2P established ✓</LogLine>
+              <LogLine type="info">[10:22:03] Streaming 1920×1080 @ 30fps</LogLine>
+              <LogLine type="ok">[10:24:15] Latency P95: 48ms ✓</LogLine>
+              <LogLine type="warn">[10:26:01] Bitrate drop → 2.1Mbps</LogLine>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// B3 — FireTV (top tabs, focused)
+const B_FireTV = () => (
+  <WfWin width={720} height={460} title="Emiscreen">
+    <div style={{ height: 'calc(100% - 36px)', display: 'flex', flexDirection: 'column' }}>
+      <TabBar tabs={['Dashboard', 'Source', '🔥 FireTV', 'Stream', 'Settings']} active={2} />
+      <div style={{ flex: 1, padding: 12, display: 'flex', gap: 10, overflow: 'hidden' }}>
+        <div style={{ flex: 1.4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="wf-section" style={{ margin: 0, borderColor: '#4af' }}>
+            <div className="wf-section-title" style={{ color: '#4af' }}>🔥 FireTV — Primary Target</div>
+            <label className="wf-input-label">FireTV IP Address</label>
+            <div className="wf-row" style={{ gap: 6, marginBottom: 10 }}>
+              <input className="wf-input highlight" defaultValue="192.168.1.42" style={{ flex: 1, fontSize: 15 }} readOnly />
+              <button className="wf-btn primary" style={{ padding: '6px 14px', whiteSpace: 'nowrap' }}>Connect ADB</button>
+            </div>
+            {/* Status indicators */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              {[['ADB','green'],['Browser','green'],['Display','green'],['Input','green']].map(([l,c]) => (
+                <div key={l} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2d2d2d', borderRadius: 5, padding: '5px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: '#555', marginBottom: 3 }}>{l}</div>
+                  <div className={`wf-dot-status ${c}`} style={{ margin: '0 auto' }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {['Wake TV','Launch Browser','Pair (first run)'].map(b => (
+                <button key={b} className="wf-btn" style={{ flex: 1, fontSize: 11, padding: '5px 4px' }}>{b}</button>
+              ))}
+            </div>
+          </div>
+          <div className="wf-section" style={{ margin: 0 }}>
+            <div className="wf-section-title">Advanced</div>
+            {[
+              { label: 'Auto-launch browser on connect', on: true },
+              { label: 'Keep display awake', on: true },
+              { label: 'Auto-reconnect ADB', on: true },
+            ].map(o => (
+              <div key={o.label} className="wf-row" style={{ marginBottom: 7 }}>
+                <span style={{ fontSize: 12, color: '#aaa' }}>{o.label}</span>
+                <div style={{ flex: 1 }} />
+                <Toggle on={o.on} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="wf-section" style={{ margin: 0 }}>
+            <div className="wf-section-title">Setup Guide</div>
+            {[
+              'Enable Developer Options (tap 7×)',
+              'Turn on ADB Debugging',
+              'Find device IP in Settings → About',
+              'Enter IP & connect',
+            ].map((s, i) => (
+              <div key={i} className="wf-row" style={{ gap: 8, marginBottom: 6 }}>
+                <div className="wf-step done" style={{ width: 20, height: 20, fontSize: 10, flexShrink: 0 }}>✓</div>
+                <span style={{ fontSize: 12, color: '#666' }}>{s}</span>
+              </div>
+            ))}
+          </div>
+          <div className="wf-section" style={{ margin: 0, flex: 1 }}>
+            <div className="wf-section-title">ADB Log</div>
+            <div className="wf-log" style={{ height: '100%' }}>
+              <LogLine type="info">$ adb connect 192.168.1.42:5555</LogLine>
+              <LogLine type="ok">connected to 192.168.1.42:5555</LogLine>
+              <LogLine type="info">am start -a android.intent.action...</LogLine>
+              <LogLine type="ok">browser launched ✓</LogLine>
+              <LogLine type="ok">display timeout set: 30min ✓</LogLine>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </WfWin>
+);
+
+// B7 — Tray (variant B style)
+const B_Tray = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e1e1e', border: '1.5px solid #333', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontFamily: 'JetBrains Mono', color: '#888' }}>
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4c4', boxShadow: '0 0 5px #4c4' }} />
+      EMISCREEN
+    </div>
+    <div className="wf-tray" style={{ width: 260 }}>
+      <div style={{ padding: '10px 14px', borderBottom: '1.5px solid #2d2d2d', display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#4c4' }}>● STREAMING</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#555' }}>02:14:33</div>
+      </div>
+      {/* mini stats */}
+      <div style={{ display: 'flex', borderBottom: '1.5px solid #2d2d2d' }}>
+        {[['48ms','latency'],['30fps','fps'],['3.8M','bitrate']].map(([v,l]) => (
+          <div key={l} style={{ flex: 1, padding: '7px', textAlign: 'center', borderRight: l !== 'bitrate' ? '1px solid #2a2a2a' : 'none' }}>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: 14, color: '#4af', fontWeight: 600 }}>{v}</div>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: '#555' }}>{l}</div>
+          </div>
+        ))}
+      </div>
+      {[
+        { icon: '📺', label: '192.168.1.42 — FireTV', color: '#4af' },
+        { icon: '⏸', label: 'Pause Stream' },
+        { icon: '⏹', label: 'Stop & Disconnect', color: '#f64' },
+        { icon: '⛶', label: 'Open Window' },
+        { icon: '⚙', label: 'Preferences' },
+      ].map((item, i) => (
+        <div key={i} style={{ padding: '8px 14px', display: 'flex', gap: 10, alignItems: 'center', borderBottom: i === 0 ? '1px solid #2a2a2a' : 'none', cursor: 'pointer' }}>
+          <span>{item.icon}</span>
+          <span style={{ fontSize: 13, color: item.color || '#ccc' }}>{item.label}</span>
+        </div>
+      ))}
+      <div style={{ padding: '6px 14px', borderTop: '1.5px solid #2d2d2d', textAlign: 'right' }}>
+        <span style={{ fontSize: 12, color: '#555', cursor: 'pointer' }}>Quit Emiscreen</span>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────
+   MAIN APP
+───────────────────────────────────────────── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "variant": "B",
+  "showOnboarding": true,
+  "showTray": true
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const showA = tweaks.variant === 'A' || tweaks.variant === 'both';
+  const showB = tweaks.variant === 'B' || tweaks.variant === 'both';
+
+  return (
+    <>
+      <DesignCanvas>
+        {/* ──── VARIANT A: Sidebar ──── */}
+        {showA && (
+          <DCSection id="varA" title="Variant A — Sidebar Navigation">
+            {tweaks.showOnboarding && (
+              <DCArtboard id="a1" label="01 Onboarding" width={680} height={430}>
+                <A_Onboarding />
+                <div className="wf-note" style={{ bottom: -28, left: 0 }}>4-step wizard · auto-detects platform</div>
+              </DCArtboard>
+            )}
+            <DCArtboard id="a2" label="02 Dashboard" width={720} height={480}>
+              <A_Dashboard />
+              <div className="wf-note" style={{ bottom: -28, left: 0 }}>Main hub · START button prominent · live stats</div>
+            </DCArtboard>
+            <DCArtboard id="a3" label="03 Source Config" width={720} height={480}>
+              <A_SourceConfig />
+            </DCArtboard>
+            <DCArtboard id="a4" label="04 FireTV Connect ★" width={720} height={480}>
+              <A_FireTV />
+              <div className="wf-note" style={{ bottom: -28, left: 0 }}>Primary action · ADB connect + D-pad map + log</div>
+            </DCArtboard>
+            <DCArtboard id="a5" label="05 Stream Viewer" width={720} height={480}>
+              <A_StreamViewer />
+            </DCArtboard>
+            <DCArtboard id="a6" label="06 Settings" width={720} height={480}>
+              <A_Settings />
+            </DCArtboard>
+            {tweaks.showTray && (
+              <DCArtboard id="a7" label="07 System Tray" width={280} height={320}>
+                <A_Tray />
+              </DCArtboard>
+            )}
+          </DCSection>
+        )}
+
+        {/* ──── VARIANT B: Top Tabs ──── */}
+        {showB && (
+          <DCSection id="varB" title="Variant B — Top Tabs">
+            {tweaks.showOnboarding && (
+              <DCArtboard id="b1" label="01 Onboarding" width={600} height={400}>
+                <B_Onboarding />
+              </DCArtboard>
+            )}
+            <DCArtboard id="b2" label="02 Dashboard" width={720} height={460}>
+              <B_Dashboard />
+            </DCArtboard>
+            <DCArtboard id="b3" label="04 FireTV Connect ★" width={720} height={460}>
+              <B_FireTV />
+            </DCArtboard>
+            {tweaks.showTray && (
+              <DCArtboard id="b7" label="07 System Tray" width={300} height={340}>
+                <B_Tray />
+              </DCArtboard>
+            )}
+          </DCSection>
+        )}
+      </DesignCanvas>
+
+      <TweaksPanel>
+        <TweakSection title="Layout Variant">
+          <TweakRadio
+            label="Show variant"
+            value={tweaks.variant}
+            options={[{ label: 'A only', value: 'A' }, { label: 'B only', value: 'B' }, { label: 'Both', value: 'both' }]}
+            onChange={v => setTweak('variant', v)}
+          />
+        </TweakSection>
+        <TweakSection title="Screens">
+          <TweakToggle label="Show Onboarding screen" value={tweaks.showOnboarding} onChange={v => setTweak('showOnboarding', v)} />
+          <TweakToggle label="Show System Tray" value={tweaks.showTray} onChange={v => setTweak('showTray', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="80" fill="#111"/>
+    <rect x="15" y="10" width="90" height="60" rx="5" fill="#1a1a1a" stroke="#444" stroke-width="1.5"/>
+    <rect x="15" y="10" width="90" height="12" rx="5" fill="#252525"/>
+    <circle cx="24" cy="16" r="3" fill="#c55"/>
+    <circle cx="32" cy="16" r="3" fill="#a83"/>
+    <circle cx="40" cy="16" r="3" fill="#484"/>
+    <rect x="18" y="26" width="18" height="40" rx="2" fill="#1e1e1e" stroke="#2d2d2d" stroke-width="1"/>
+    <rect x="40" y="26" width="62" height="40" rx="2" fill="#222"/>
+    <rect x="44" y="30" width="26" height="14" rx="2" fill="#1a1a1a" stroke="#4af" stroke-width="0.8"/>
+    <rect x="72" y="30" width="26" height="14" rx="2" fill="rgba(68,170,255,0.1)" stroke="#4af" stroke-width="0.8"/>
+    <rect x="44" y="48" width="54" height="6" rx="2" fill="rgba(60,200,60,0.15)" stroke="#4c4" stroke-width="0.8"/>
+    <rect x="44" y="56" width="54" height="7" rx="2" fill="#1a1a1a" stroke="#333" stroke-width="0.8"/>
+  </svg>
+</template>
+</body>
+</html>

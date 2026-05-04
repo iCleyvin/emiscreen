@@ -48,3 +48,14 @@ htmlcov/
 
 # Docker
 .env
+
+# Android / Build artifacts
+*.apk
+*.keystore
+firetv-app/.gradle/
+firetv-app/app/build/
+firetv-app/app/.cxx/
+
+# Local scripts / temp
+scripts/validate-local.py
+emiscreen-firetv.apk

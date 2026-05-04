@@ -30,6 +30,8 @@ from emiscreen.config import (
     SOURCES,
     get_source,
     load_from_env,
+    QUALITY_PRESETS,
+    get_native_resolution,
 )
 from emiscreen.relay.adb import ADBController
 from emiscreen.relay.input import InputRelay
@@ -114,9 +116,6 @@ class EmiscreenServer:
         except Exception as e:
             logger.error(f"Offer handling failed: {e}")
             return web.json_response({"error": str(e)}, status=500)
-        except Exception as e:
-            logger.error(f"Offer handling failed: {e}")
-            return web.json_response({"error": str(e)}, status=500)
 
     async def _handle_input_ws(self, request: web.Request) -> web.StreamResponse:
         """WebSocket endpoint for input relay."""
@@ -135,6 +134,9 @@ class EmiscreenServer:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     try:
                         event = json.loads(msg.data)
+                        if event.get("type") == "ping":
+                            await ws.send_json({"type": "pong"})
+                            continue
                         await self.input_relay.process_event(client_id, event)
                     except json.JSONDecodeError:
                         logger.warning(f"Invalid JSON from client {client_id}")
@@ -196,8 +198,6 @@ class EmiscreenServer:
 
     async def start(self):
         """Start the Emiscreen server."""
-        load_from_env()
-
         logger.info("=" * 60)
         logger.info("  Emiscreen - Remote Display via WebRTC")
         logger.info("=" * 60)
@@ -304,6 +304,18 @@ class EmiscreenServer:
 
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
+        local_ip = self._get_local_ip()
+        san_list = [
+            x509.DNSName("emiscreen.local"),
+            x509.DNSName("localhost"),
+            x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+        ]
+        if local_ip and local_ip != "127.0.0.1" and local_ip != "localhost":
+            try:
+                san_list.append(x509.IPAddress(ipaddress.IPv4Address(local_ip)))
+            except ValueError:
+                pass
+
         subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "emiscreen.local")])
         cert = (
             x509.CertificateBuilder()
@@ -311,14 +323,10 @@ class EmiscreenServer:
             .issuer_name(issuer)
             .public_key(key.public_key())
             .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=3650))
+            .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+            .not_valid_after(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=3650))
             .add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName("emiscreen.local"),
-                    x509.DNSName("localhost"),
-                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
-                ]),
+                x509.SubjectAlternativeName(san_list),
                 critical=False,
             )
             .sign(key, hashes.SHA256())
@@ -407,6 +415,22 @@ def main():
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--quality", "-q",
+        choices=["fast", "balanced", "quality", "native"],
+        default="balanced",
+        help="Quality preset: fast (720p24), balanced (1080p24), quality (1080p30), native (monitor res@20fps) (default: balanced)",
+    )
+    parser.add_argument(
+        "--bitrate", "-b",
+        default="8M",
+        help="Video bitrate, e.g. 4M, 8M, 12M (default: 8M)",
+    )
+    parser.add_argument(
+        "--display", "-d",
+        default="desktop",
+        help="Display/monitor to capture. 'desktop' for all, '1' for primary, '2' for secondary (default: desktop)",
+    )
 
     args = parser.parse_args()
 
@@ -419,11 +443,26 @@ def main():
     # Get capture source config
     capture_config = get_source(args.source)
 
-    # Override from CLI args
+    # Apply quality preset
+    if args.quality in QUALITY_PRESETS:
+        preset_res, preset_fps = QUALITY_PRESETS[args.quality]
+        if preset_res == "auto":
+            native_w, native_h = get_native_resolution()
+            preset_res = f"{native_w}x{native_h}"
+            logger.info(f"Detected native resolution: {preset_res}")
+        capture_config.resolution = preset_res
+        capture_config.fps = preset_fps
+        logger.info(f"Quality preset: {args.quality} ({preset_res}@{preset_fps}fps)")
+
+    # Override from CLI args (highest priority)
     if args.resolution:
         capture_config.resolution = args.resolution
     if args.fps:
         capture_config.fps = args.fps
+    if args.bitrate:
+        capture_config.bitrate = args.bitrate
+    if args.display:
+        capture_config.display = args.display
 
     # Server config
     server_config = ServerConfig(host=args.host, port=args.port)

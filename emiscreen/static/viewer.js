@@ -1,14 +1,13 @@
 /**
- * Emiscreen Viewer - WebRTC Client for FireTV Browser
+ * Emiscreen Viewer - WebRTC Client for FireTV / Browser
  *
  * Handles:
- * - WebRTC connection to Emiscreen server
- * - Video stream playback
- * - Input capture (D-Pad, keyboard, mouse)
- * - Auto-reconnection with exponential backoff
- * - Stats overlay (FPS, latency, resolution)
+ * - WebRTC connection with auto-reconnect
+ * - Cross-platform input: D-Pad, keyboard, mouse, touch
+ * - WebSocket ping/pong for connection health
+ * - Stats overlay (FPS, resolution, estimated latency)
+ * - Fullscreen & UI overlays
  */
-
 (function () {
     'use strict';
 
@@ -19,9 +18,13 @@
     const errorOverlay = document.getElementById('error-overlay');
     const errorText = document.getElementById('error-text');
     const reconnectBtn = document.getElementById('reconnect-btn');
+    const sslOverlay = document.getElementById('ssl-overlay');
+    const sslRetryBtn = document.getElementById('ssl-retry-btn');
     const statsOverlay = document.getElementById('stats-overlay');
     const statsFps = document.getElementById('stats-fps');
     const statsResolution = document.getElementById('stats-resolution');
+    const statsLatency = document.getElementById('stats-latency');
+    const controlsHint = document.getElementById('controls-hint');
 
     // State
     let peerConnection = null;
@@ -31,99 +34,116 @@
     let reconnectTimer = null;
     let statsInterval = null;
     let frameCount = 0;
-    let lastFrameTime = 0;
-    let currentFps = 0;
     let lastStatsTime = Date.now();
+    let pingInterval = null;
+    let lastPongTime = Date.now();
+    let isSslError = false;
 
-    // Configuration
+    // Config
     const RECONNECT_BASE_DELAY = 1000;
     const RECONNECT_MAX_DELAY = 30000;
-    const STATS_INTERVAL = 2000;
+    const STATS_INTERVAL_MS = 2000;
+    const PING_INTERVAL_MS = 5000;
+    const PONG_TIMEOUT_MS = 15000;
     const DPAD_STEP = 20;
 
-    // FireTV D-Pad key code mapping
+    // Unified key map: supports e.code (string), e.key (string), e.keyCode (number)
     const KEY_MAP = {
-        38: 'dpad_up',       // Arrow Up
-        40: 'dpad_down',     // Arrow Down
-        37: 'dpad_left',     // Arrow Left
-        39: 'dpad_right',    // Arrow Right
-        13: 'dpad_center',   // Enter/Select
-        27: 'back',          // Escape/Back
-        179: 'play_pause',   // Play/Pause (FireTV remote)
-        177: 'next',         // Next
-        176: 'prev',         // Previous
-        174: 'volume_down',  // Volume Down
-        175: 'volume_up',    // Volume Up
-        173: 'mute',         // Mute
-        32: 'space',         // Space
-        9: 'tab',            // Tab
-        8: 'backspace',      // Backspace
-        46: 'delete',        // Delete
-        36: 'home',          // Home
-        35: 'end',           // End
-        33: 'page_up',       // Page Up
-        34: 'page_down',     // Page Down
+        // Legacy keyCodes
+        38: 'dpad_up', 40: 'dpad_down', 37: 'dpad_left', 39: 'dpad_right',
+        13: 'dpad_center', 27: 'back', 8: 'backspace', 46: 'delete',
+        32: 'space', 9: 'tab', 36: 'home', 35: 'end',
+        33: 'page_up', 34: 'page_down',
+        179: 'play_pause', 177: 'prev', 176: 'next',
+        174: 'volume_down', 175: 'volume_up', 173: 'mute',
+        // Android / Fire TV keyCodes
+        19: 'dpad_up', 20: 'dpad_down', 21: 'dpad_left', 22: 'dpad_right',
+        23: 'dpad_center', 4: 'back', 82: 'menu',
+        // e.code / e.key strings
+        'arrowup': 'dpad_up', 'arrowdown': 'dpad_down', 'arrowleft': 'dpad_left', 'arrowright': 'dpad_right',
+        'enter': 'dpad_center', 'escape': 'back', 'backspace': 'backspace', 'delete': 'delete',
+        'space': 'space', 'tab': 'tab', 'home': 'home', 'end': 'end',
+        'pageup': 'page_up', 'pagedown': 'page_down',
+        'playpause': 'play_pause', 'mediaplaypause': 'play_pause',
+        'mediatrackprevious': 'prev', 'mediatracknext': 'next',
+        'volumedown': 'volume_down', 'volumeup': 'volume_up', 'volumemute': 'mute',
     };
+
+    function normalizeKey(e) {
+        if (e.code) {
+            const m = KEY_MAP[e.code.toLowerCase()];
+            if (m) return m;
+        }
+        if (e.key) {
+            const m = KEY_MAP[e.key.toLowerCase()];
+            if (m) return m;
+        }
+        if (e.keyCode) {
+            const m = KEY_MAP[e.keyCode];
+            if (m) return m;
+        }
+        if (e.key && e.key.length === 1) return e.key;
+        return null;
+    }
 
     // Initialize
     function init() {
         setupEventListeners();
+        showControlsHint();
         connect();
     }
 
     function setupEventListeners() {
-        // Reconnect button
         reconnectBtn.addEventListener('click', () => {
             reconnectAttempts = 0;
             connect();
         });
+        sslRetryBtn.addEventListener('click', () => {
+            hideSsl();
+            reconnectAttempts = 0;
+            connect();
+        });
 
-        // Keyboard input (FireTV remote sends key events)
-        document.addEventListener('keydown', handleKeyDown);
-        document.addEventListener('keyup', handleKeyUp);
+        // Single keydown handler for everything
+        document.addEventListener('keydown', handleKeyDown, true);
+        document.addEventListener('keyup', handleKeyUp, true);
 
-        // Mouse input (for devices with mouse support)
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mousedown', handleMouseDown);
         document.addEventListener('mouseup', handleMouseUp);
-        document.addEventListener('wheel', handleWheel);
+        document.addEventListener('wheel', handleWheel, { passive: false });
 
-        // Touch input
         document.addEventListener('touchstart', handleTouchStart, { passive: false });
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd);
 
-        // Video events
         video.addEventListener('playing', onVideoPlaying);
         video.addEventListener('waiting', onVideoWaiting);
         video.addEventListener('error', onVideoError);
 
-        // Visibility change - reconnect when page becomes visible
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && !connected) {
                 connect();
             }
         });
-
-        // Prevent default FireTV behaviors that interfere
-        document.addEventListener('keydown', (e) => {
-            // Prevent back button from closing the app
-            if (e.keyCode === 27 || e.keyCode === 4) {
-                e.preventDefault();
-                sendInput({ type: 'key', key: 'back' });
-            }
-        }, true);
     }
 
-    // WebRTC Connection
+    function showControlsHint() {
+        // Only show on first load, hide after 10s
+        controlsHint.classList.remove('hidden');
+        setTimeout(() => controlsHint.classList.add('hidden'), 10000);
+    }
+
+    // ========== WebRTC ==========
     async function connect() {
         if (connected) return;
-
         showStatus('Connecting...');
         hideError();
+        hideSsl();
+        isSslError = false;
 
         try {
-            // Create peer connection
+            // Create peer connection with low-latency tuning
             peerConnection = new RTCPeerConnection({
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
@@ -131,18 +151,24 @@
                 ],
             });
 
-            // Handle incoming video track
-            peerConnection.ontrack = (event) => {
+            // Set low-latency parameters on the video receiver
+            peerConnection.addEventListener('track', (event) => {
                 if (event.track.kind === 'video') {
                     video.srcObject = event.streams[0];
+                    // Try to minimize playout delay
+                    try {
+                        const receiver = event.receiver;
+                        const params = receiver.getParameters();
+                        if (params.degradationPreference !== undefined) {
+                            params.degradationPreference = 'maintain-framerate';
+                            receiver.setParameters(params).catch(() => {});
+                        }
+                    } catch (e) {}
                 }
-            };
+            });
 
-            // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
                 const state = peerConnection.connectionState;
-                console.log('WebRTC state:', state);
-
                 if (state === 'connected') {
                     onConnected();
                 } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
@@ -150,19 +176,12 @@
                 }
             };
 
-            // Handle ICE connection state
-            peerConnection.oniceconnectionstatechange = () => {
-                console.log('ICE state:', peerConnection.iceConnectionState);
-            };
-
-            // Create offer
             const offer = await peerConnection.createOffer({
                 offerToReceiveVideo: true,
                 offerToReceiveAudio: false,
             });
             await peerConnection.setLocalDescription(offer);
 
-            // Send offer to server
             const response = await fetch('/offer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -174,18 +193,21 @@
             }
 
             const answer = await response.json();
-
-            // Set remote description
             await peerConnection.setRemoteDescription(
                 new RTCSessionDescription(answer)
             );
 
-            // Connect WebSocket for input
             connectWebSocket();
 
         } catch (error) {
             console.error('Connection failed:', error);
-            showError(`Connection failed: ${error.message}`);
+            // Detect self-signed cert block
+            if (location.protocol === 'https:' && (error.name === 'TypeError' || error.message.includes('Failed to fetch'))) {
+                showSsl();
+                isSslError = true;
+            } else {
+                showError(`Connection failed: ${error.message}`);
+            }
             scheduleReconnect();
         }
     }
@@ -196,6 +218,8 @@
         hideStatus();
         document.body.classList.add('viewing');
         startStats();
+        startPing();
+        tryEnterFullscreen();
         console.log('Emiscreen connected');
     }
 
@@ -204,42 +228,53 @@
         connected = false;
         document.body.classList.remove('viewing');
         stopStats();
-
+        stopPing();
         if (state === 'failed') {
             showError('Connection failed');
         } else {
             showError('Connection lost');
         }
-
         scheduleReconnect();
     }
 
-    // WebSocket Input Relay
+    function tryEnterFullscreen() {
+        const el = document.documentElement;
+        if (el.requestFullscreen && !document.fullscreenElement) {
+            el.requestFullscreen().catch(() => {});
+        }
+    }
+
+    // ========== WebSocket Input + Ping/Pong ==========
     function connectWebSocket() {
         const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${location.host}/input`;
 
-        try {
-            ws = new WebSocket(wsUrl);
+        ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => {
-                console.log('Input WebSocket connected');
-            };
+        ws.onopen = () => {
+            console.log('Input WebSocket connected');
+            lastPongTime = Date.now();
+        };
 
-            ws.onclose = () => {
-                console.log('Input WebSocket closed');
-                // Don't trigger full reconnect, just try to reconnect WS
-                setTimeout(() => {
-                    if (connected) connectWebSocket();
-                }, 2000);
-            };
+        ws.onmessage = (msg) => {
+            try {
+                const data = JSON.parse(msg.data);
+                if (data.type === 'pong') {
+                    lastPongTime = Date.now();
+                }
+            } catch (e) {}
+        };
 
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-        } catch (error) {
-            console.error('Failed to create WebSocket:', error);
-        }
+        ws.onclose = () => {
+            console.log('Input WebSocket closed');
+            setTimeout(() => {
+                if (connected) connectWebSocket();
+            }, 2000);
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
     }
 
     function sendInput(event) {
@@ -248,79 +283,82 @@
         }
     }
 
-    // Input Handlers
-    function handleKeyDown(e) {
-        const keyName = KEY_MAP[e.code] || KEY_MAP[e.key] || e.key;
-        sendInput({ type: 'keydown', key: keyName, code: e.code });
+    function startPing() {
+        if (pingInterval) clearInterval(pingInterval);
+        pingInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+            }
+            // If no pong in a while, force reconnect
+            if (Date.now() - lastPongTime > PONG_TIMEOUT_MS) {
+                console.warn('Ping timeout, forcing reconnect');
+                if (peerConnection) {
+                    peerConnection.close();
+                }
+            }
+        }, PING_INTERVAL_MS);
+    }
 
-        // Prevent default for navigation keys (we handle them)
-        if (KEY_MAP[e.code] || KEY_MAP[e.key]) {
+    function stopPing() {
+        if (pingInterval) {
+            clearInterval(pingInterval);
+            pingInterval = null;
+        }
+    }
+
+    // ========== Input Handlers ==========
+    function handleKeyDown(e) {
+        const keyName = normalizeKey(e);
+        if (!keyName) return;
+
+        // Back / Escape should not close the app/page
+        if (keyName === 'back') {
+            e.preventDefault();
+        }
+
+        sendInput({ type: 'keydown', key: keyName, code: e.code, keyCode: e.keyCode });
+
+        // Prevent default for navigation keys we consume
+        if (['dpad_up','dpad_down','dpad_left','dpad_right','dpad_center','back','space','tab'].includes(keyName)) {
             e.preventDefault();
         }
     }
 
     function handleKeyUp(e) {
-        const keyName = KEY_MAP[e.code] || KEY_MAP[e.key] || e.key;
-        sendInput({ type: 'keyup', key: keyName, code: e.code });
+        const keyName = normalizeKey(e);
+        if (!keyName) return;
+        sendInput({ type: 'keyup', key: keyName, code: e.code, keyCode: e.keyCode });
     }
 
     function handleMouseMove(e) {
-        sendInput({
-            type: 'mousemove',
-            x: e.clientX,
-            y: e.clientY,
-            screenX: e.screenX,
-            screenY: e.screenY,
-        });
+        sendInput({ type: 'mousemove', x: e.clientX, y: e.clientY, screenX: e.screenX, screenY: e.screenY });
     }
 
     function handleMouseDown(e) {
-        sendInput({
-            type: 'mousedown',
-            button: e.button,
-            x: e.clientX,
-            y: e.clientY,
-        });
+        sendInput({ type: 'mousedown', button: e.button, x: e.clientX, y: e.clientY });
     }
 
     function handleMouseUp(e) {
-        sendInput({
-            type: 'mouseup',
-            button: e.button,
-            x: e.clientX,
-            y: e.clientY,
-        });
+        sendInput({ type: 'mouseup', button: e.button, x: e.clientX, y: e.clientY });
     }
 
     function handleWheel(e) {
-        sendInput({
-            type: 'wheel',
-            deltaX: e.deltaX,
-            deltaY: e.deltaY,
-        });
+        sendInput({ type: 'wheel', deltaX: e.deltaX, deltaY: e.deltaY });
         e.preventDefault();
     }
 
     function handleTouchStart(e) {
         if (e.touches.length === 1) {
-            const touch = e.touches[0];
-            sendInput({
-                type: 'touchstart',
-                x: touch.clientX,
-                y: touch.clientY,
-            });
+            const t = e.touches[0];
+            sendInput({ type: 'touchstart', x: t.clientX, y: t.clientY });
         }
         e.preventDefault();
     }
 
     function handleTouchMove(e) {
         if (e.touches.length === 1) {
-            const touch = e.touches[0];
-            sendInput({
-                type: 'touchmove',
-                x: touch.clientX,
-                y: touch.clientY,
-            });
+            const t = e.touches[0];
+            sendInput({ type: 'touchmove', x: t.clientX, y: t.clientY });
         }
         e.preventDefault();
     }
@@ -329,7 +367,7 @@
         sendInput({ type: 'touchend' });
     }
 
-    // Video Event Handlers
+    // ========== Video Events ==========
     function onVideoPlaying() {
         video.classList.remove('loading');
         hideStatus();
@@ -344,37 +382,44 @@
         showError('Video playback error');
     }
 
-    // Stats
+    // ========== Stats ==========
     function startStats() {
         frameCount = 0;
-        lastFrameTime = 0;
         lastStatsTime = Date.now();
 
-        // Count frames via requestAnimationFrame
         function countFrame() {
             frameCount++;
-            if (connected) {
-                requestAnimationFrame(countFrame);
-            }
+            if (connected) requestAnimationFrame(countFrame);
         }
         requestAnimationFrame(countFrame);
 
-        // Update stats display
         statsInterval = setInterval(() => {
             const now = Date.now();
             const elapsed = (now - lastStatsTime) / 1000;
-            currentFps = Math.round(frameCount / elapsed);
+            const fps = Math.round(frameCount / elapsed);
+            statsFps.textContent = `${fps} fps`;
 
-            statsFps.textContent = `${currentFps} fps`;
-
-            // Estimate latency from video element
             if (video.readyState >= 2) {
                 statsResolution.textContent = `${video.videoWidth}x${video.videoHeight}`;
             }
 
+            // Estimate latency from getStats (if available)
+            if (peerConnection && peerConnection.getStats) {
+                peerConnection.getStats().then(stats => {
+                    stats.forEach(report => {
+                        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                            // jitter + some constant as rough latency estimate
+                            const jitter = report.jitter || 0;
+                            const est = Math.round(jitter * 1000 + 30);
+                            statsLatency.textContent = `~${est} ms`;
+                        }
+                    });
+                }).catch(() => {});
+            }
+
             frameCount = 0;
             lastStatsTime = now;
-        }, STATS_INTERVAL);
+        }, STATS_INTERVAL_MS);
 
         statsOverlay.classList.remove('hidden');
     }
@@ -387,15 +432,14 @@
         statsOverlay.classList.add('hidden');
     }
 
-    // Reconnection
+    // ========== Reconnection ==========
     function scheduleReconnect() {
-        if (reconnectTimer) return;
+        if (reconnectTimer || isSslError) return;
 
         const delay = Math.min(
             RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts),
             RECONNECT_MAX_DELAY
         );
-
         reconnectAttempts++;
         statusText.textContent = `Reconnecting in ${Math.round(delay / 1000)}s...`;
         showStatus(statusText.textContent);
@@ -406,7 +450,7 @@
         }, delay);
     }
 
-    // UI Helpers
+    // ========== UI Helpers ==========
     function showStatus(text) {
         statusText.textContent = text;
         statusOverlay.classList.remove('hidden');
@@ -424,6 +468,16 @@
 
     function hideError() {
         errorOverlay.classList.add('hidden');
+    }
+
+    function showSsl() {
+        sslOverlay.classList.remove('hidden');
+        hideStatus();
+        hideError();
+    }
+
+    function hideSsl() {
+        sslOverlay.classList.add('hidden');
     }
 
     // Start

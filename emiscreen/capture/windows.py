@@ -1,34 +1,162 @@
 """
 Emiscreen Windows Capture Module
 
-Captures the Windows desktop using FFmpeg gdigrab with h264 encoding.
-Uses h264 passthrough for efficient WebRTC streaming.
+Captures the Windows desktop using FFmpeg gdigrab, outputting raw YUV420P
+frames that are fed directly into the WebRTC pipeline.
+
+Optimizations:
+- No downscaling if target resolution matches native monitor resolution
+- Lanczos scaling for better sharpness when downscaling is needed
 """
 
 import asyncio
+import ctypes
 import logging
-import platform
-from fractions import Fraction
 from typing import Optional
 
-import av
-from aiortc import VideoStreamTrack
-from aiortc.mediastreams import VideoStreamTrack as AiortcVideoTrack
-
-from emiscreen.capture.base import CaptureSource
+from emiscreen.capture.base import CaptureSource, FFmpegRawVideoTrack
 from emiscreen.config import CaptureConfig
 
 logger = logging.getLogger(__name__)
 
 
+def _get_monitors() -> list[dict]:
+    """List all connected monitors with their resolutions (ignores DPI scaling)."""
+    monitors = []
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+
+        class DEVMODE(ctypes.Structure):
+            _fields_ = [
+                ("dmDeviceName", ctypes.c_wchar * 32),
+                ("dmSpecVersion", wintypes.WORD),
+                ("dmDriverVersion", wintypes.WORD),
+                ("dmSize", wintypes.WORD),
+                ("dmDriverExtra", wintypes.WORD),
+                ("dmFields", wintypes.DWORD),
+                ("dmOrientation", ctypes.c_short),
+                ("dmPaperSize", ctypes.c_short),
+                ("dmPaperLength", ctypes.c_short),
+                ("dmPaperWidth", ctypes.c_short),
+                ("dmScale", ctypes.c_short),
+                ("dmCopies", ctypes.c_short),
+                ("dmDefaultSource", ctypes.c_short),
+                ("dmPrintQuality", ctypes.c_short),
+                ("dmColor", ctypes.c_short),
+                ("dmDuplex", ctypes.c_short),
+                ("dmYResolution", ctypes.c_short),
+                ("dmTTOption", ctypes.c_short),
+                ("dmCollate", ctypes.c_short),
+                ("dmFormName", ctypes.c_wchar * 32),
+                ("dmLogPixels", wintypes.WORD),
+                ("dmBitsPerPel", wintypes.DWORD),
+                ("dmPelsWidth", wintypes.DWORD),
+                ("dmPelsHeight", wintypes.DWORD),
+                ("dmDisplayFlags", wintypes.DWORD),
+                ("dmDisplayFrequency", wintypes.DWORD),
+                ("dmICMMethod", wintypes.DWORD),
+                ("dmICMIntent", wintypes.DWORD),
+                ("dmMediaType", wintypes.DWORD),
+                ("dmDitherType", wintypes.DWORD),
+                ("dmReserved1", wintypes.DWORD),
+                ("dmReserved2", wintypes.DWORD),
+                ("dmPanningWidth", wintypes.DWORD),
+                ("dmPanningHeight", wintypes.DWORD),
+            ]
+
+        def enum_display_devices():
+            """Enumerate all display devices."""
+            class DISPLAY_DEVICE(ctypes.Structure):
+                _fields_ = [
+                    ("cb", wintypes.DWORD),
+                    ("DeviceName", ctypes.c_wchar * 32),
+                    ("DeviceString", ctypes.c_wchar * 128),
+                    ("StateFlags", wintypes.DWORD),
+                    ("DeviceID", ctypes.c_wchar * 128),
+                    ("DeviceKey", ctypes.c_wchar * 128),
+                ]
+
+            device = DISPLAY_DEVICE()
+            device.cb = ctypes.sizeof(DISPLAY_DEVICE)
+            i = 0
+            while user32.EnumDisplayDevicesW(None, i, ctypes.byref(device), 0):
+                if device.StateFlags & 0x00000001:  # DISPLAY_DEVICE_ACTIVE
+                    dm = DEVMODE()
+                    dm.dmSize = ctypes.sizeof(DEVMODE)
+                    if user32.EnumDisplaySettingsW(device.DeviceName, ctypes.c_uint32(0xFFFFFFFF), ctypes.byref(dm)):
+                        monitors.append({
+                            "id": i + 1,
+                            "name": device.DeviceName,
+                            "width": dm.dmPelsWidth,
+                            "height": dm.dmPelsHeight,
+                            "refresh": dm.dmDisplayFrequency,
+                        })
+                i += 1
+
+        enum_display_devices()
+
+        if not monitors:
+            # Fallback: primary monitor only
+            dm = DEVMODE()
+            dm.dmSize = ctypes.sizeof(DEVMODE)
+            if user32.EnumDisplaySettingsW(None, ctypes.c_uint32(0xFFFFFFFF), ctypes.byref(dm)):
+                monitors.append({
+                    "id": 1,
+                    "name": "Primary",
+                    "width": dm.dmPelsWidth,
+                    "height": dm.dmPelsHeight,
+                    "refresh": dm.dmDisplayFrequency,
+                })
+    except Exception as e:
+        logger.warning(f"Could not enumerate monitors: {e}")
+        monitors.append({"id": 1, "name": "Primary", "width": 1920, "height": 1080, "refresh": 60})
+
+    return monitors
+
+
+def _get_native_resolution() -> tuple[int, int]:
+    """Get the REAL native resolution of the primary monitor (ignores DPI scaling)."""
+    monitors = _get_monitors()
+    if monitors:
+        primary = next((m for m in monitors if m["id"] == 1), monitors[0])
+        return primary["width"], primary["height"]
+    return 1920, 1080
+
+
+def list_monitors() -> str:
+    """Return a formatted list of connected monitors."""
+    monitors = _get_monitors()
+    lines = ["Connected monitors:"]
+    for m in monitors:
+        lines.append(f"  {m['id']}: {m['name']} ({m['width']}x{m['height']} @ {m['refresh']}Hz)")
+    return "\n".join(lines)
+
+
 class WindowsCapture(CaptureSource):
-    """Captures Windows desktop via FFmpeg gdigrab with h264 encoding."""
+    """Captures Windows desktop via FFmpeg gdigrab → raw YUV420P."""
 
     def __init__(self, config: CaptureConfig):
         super().__init__(config)
         self._width, self._height = self._parse_resolution()
         self._fps = config.fps
-        self._decoder = None
+        self._display = config.display  # "desktop" or "1", "2", etc.
+
+        # Get resolution of the specific monitor being captured
+        monitors = _get_monitors()
+        if self._display != "desktop" and self._display.isdigit():
+            monitor_id = int(self._display)
+            selected = next((m for m in monitors if m["id"] == monitor_id), None)
+            if selected:
+                self._native_w, self._native_h = selected["width"], selected["height"]
+                logger.info(f"Selected monitor {monitor_id}: {self._native_w}x{self._native_h}")
+            else:
+                logger.warning(f"Monitor {monitor_id} not found, using primary")
+                self._native_w, self._native_h = _get_native_resolution()
+        else:
+            self._native_w, self._native_h = _get_native_resolution()
 
     def _parse_resolution(self) -> tuple[int, int]:
         """Parse resolution string into width/height tuple."""
@@ -36,31 +164,40 @@ class WindowsCapture(CaptureSource):
         return int(parts[0]), int(parts[1])
 
     async def start(self):
-        """Start FFmpeg gdigrab capture with h264 encoding."""
+        """Start FFmpeg gdigrab capture to raw YUV420P."""
         await super().start()
 
-        # Build FFmpeg command with h264 encoding
+        # Build video filter: lanczos scaling for sharpness
+        target_w, target_h = self._width, self._height
+        native_w, native_h = self._native_w, self._native_h
+
+        if target_w == native_w and target_h == native_h:
+            # Native capture — no scaling needed
+            vf = "format=yuv420p"
+            logger.info(f"Native capture: {native_w}x{native_h}")
+        else:
+            # Scale with lanczos for best sharpness
+            vf = f"scale={target_w}:{target_h}:flags=lanczos,format=yuv420p"
+            logger.info(f"Scaling: {native_w}x{native_h} → {target_w}x{target_h} (lanczos)")
+
+        # Determine input: "desktop" or monitor number
+        input_device = self._display if self._display != "desktop" else "desktop"
+
         cmd = [
             "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
             "-f", "gdigrab",
             "-framerate", str(self._fps),
-            "-i", "desktop",
-            "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-tune", "zerolatency",
-            "-profile:v", "baseline",
-            "-level", "3.0",
+            "-i", input_device,
+            "-vf", vf,
             "-pix_fmt", "yuv420p",
-            "-vf", f"scale={self._width}:{self._height}",
-            "-bufsize", "512k",
-            "-maxrate", "2M",
-            "-an",
-            "-f", "h264",
-            "-flush_packets", "1",
+            "-f", "rawvideo",
+            "-threads", "2",
             "-",
         ]
 
-        logger.info(f"Starting FFmpeg gdigrab h264: {' '.join(cmd)}")
+        logger.info(f"Starting Windows capture: {' '.join(cmd)}")
 
         self._ffmpeg_process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -68,18 +205,15 @@ class WindowsCapture(CaptureSource):
             stderr=asyncio.subprocess.PIPE,
         )
 
-        # Create video track for h264 decoding
-        self._video_track = H264DecodeTrack(
+        self._video_track = FFmpegRawVideoTrack(
             self._ffmpeg_process.stdout,
-            self._width,
-            self._height,
+            target_w,
+            target_h,
             self._fps,
         )
 
-        # Log FFmpeg stderr in background
         asyncio.create_task(self._log_ffmpeg_stderr())
-
-        logger.info(f"Windows capture started: {self._width}x{self._height} @ {self._fps}fps h264")
+        logger.info(f"Windows capture started: {target_w}x{target_h} @ {self._fps}fps from monitor '{input_device}'")
 
     async def stop(self):
         """Stop FFmpeg capture."""
@@ -108,68 +242,3 @@ class WindowsCapture(CaptureSource):
                     logger.debug(f"FFmpeg: {line_str}")
         except Exception as e:
             logger.debug(f"FFmpeg stderr reader stopped: {e}")
-
-
-class H264DecodeTrack(AiortcVideoTrack):
-    """
-    VideoStreamTrack that reads h264 frames from FFmpeg, decodes to raw,
-    then passes to WebRTC. Uses av library for h264 decoding.
-    """
-
-    kind = "video"
-
-    def __init__(self, stream: asyncio.StreamReader, width: int, height: int, fps: int):
-        super().__init__()
-        self._stream = stream
-        self._width = width
-        self._height = height
-        self._fps = fps
-        self._timestamp = 0
-        self._frame_interval = 1 / fps
-        self._frame_count = 0
-        self._decoder = None
-        self._packet_buffer = b""
-
-    async def recv(self) -> av.VideoFrame:
-        """Read next h264 frame, decode, and return as VideoFrame."""
-        if self._decoder is None:
-            self._decoder = av.CodecContext.create("h264", "r")
-            logger.info("H264 decoder initialized")
-
-        # Feed packets until we get a frame
-        while True:
-            # Try to decode what we have
-            try:
-                frames = self._decoder.decode(self._packet_buffer)
-                if frames:
-                    frame = frames[0]
-                    self._frame_count += 1
-                    if self._frame_count % 30 == 0:
-                        logger.info(f"Frame {self._frame_count}: {frame.width}x{frame.height} fmt={frame.format}")
-                    frame.pts = int(self._timestamp * 90000)
-                    frame.time_base = Fraction(1, 90000)
-                    self._timestamp += self._frame_interval
-                    return frame
-            except Exception as e:
-                logger.warning(f"Decode error: {e}, clearing buffer")
-                self._packet_buffer = b""
-
-            # Need more data - read from stream
-            try:
-                # Read length prefix (4 bytes big endian)
-                size_data = await self._stream.readexactly(4)
-                size = int.from_bytes(size_data, "big")
-                if size > 0 and size < 2000000:  # Sanity check
-                    packet = await self._stream.readexactly(size)
-                    self._packet_buffer += packet
-                    if self._frame_count < 5:
-                        logger.debug(f"Packet {self._frame_count}: size={size}, buffer={len(self._packet_buffer)}")
-                else:
-                    logger.warning(f"Invalid packet size: {size}")
-                    break
-            except asyncio.IncompleteReadError:
-                logger.warning("H264 stream ended")
-                raise
-            except Exception as e:
-                logger.error(f"H264 read error: {e}")
-                break

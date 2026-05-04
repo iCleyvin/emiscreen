@@ -3,23 +3,60 @@ Emiscreen Linux Capture Module
 
 Captures the Linux desktop using FFmpeg x11grab.
 Supports both physical displays and virtual Xvfb displays.
+
+Optimizations:
+- No downscaling if target resolution matches native display resolution
+- Lanczos scaling for better sharpness when downscaling is needed
 """
 
 import asyncio
 import logging
 import os
 import subprocess
-from fractions import Fraction
 from typing import Optional
 
-import av
-from aiortc import VideoStreamTrack
-from aiortc.mediastreams import VideoStreamTrack as AiortcVideoTrack
-
-from emiscreen.capture.base import CaptureSource
+from emiscreen.capture.base import CaptureSource, FFmpegRawVideoTrack
 from emiscreen.config import CaptureConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _get_x11_resolution(display: str = ":0") -> tuple[int, int]:
+    """Get resolution of an X11 display via xrandr or xdpyinfo."""
+    # Try xrandr first
+    try:
+        result = subprocess.run(
+            ["xrandr", "--display", display],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in result.stdout.splitlines():
+            if "*" in line:
+                parts = line.strip().split()
+                if parts:
+                    res = parts[0]
+                    if "x" in res:
+                        w, h = res.split("x")
+                        return int(w), int(h)
+    except Exception:
+        pass
+
+    # Fallback to xdpyinfo
+    try:
+        result = subprocess.run(
+            ["xdpyinfo", "-display", display],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in result.stdout.splitlines():
+            if "dimensions:" in line:
+                parts = line.split()
+                for part in parts:
+                    if "x" in part and part[0].isdigit():
+                        w, h = part.split("x")
+                        return int(w), int(h)
+    except Exception:
+        pass
+
+    return 1920, 1080
 
 
 class LinuxCapture(CaptureSource):
@@ -30,6 +67,7 @@ class LinuxCapture(CaptureSource):
         self._width, self._height = self._parse_resolution()
         self._fps = config.fps
         self._display = config.display
+        self._native_w, self._native_h = _get_x11_resolution(self._display)
 
     def _parse_resolution(self) -> tuple[int, int]:
         """Parse resolution string into width/height tuple."""
@@ -37,23 +75,35 @@ class LinuxCapture(CaptureSource):
         return int(parts[0]), int(parts[1])
 
     async def start(self):
-        """Start FFmpeg x11grab capture."""
+        """Start FFmpeg x11grab capture to raw YUV420P."""
         await super().start()
 
-        # Build FFmpeg command
+        target_w, target_h = self._width, self._height
+        native_w, native_h = self._native_w, self._native_h
+
+        if target_w == native_w and target_h == native_h:
+            vf = "format=yuv420p"
+            logger.info(f"Native capture: {native_w}x{native_h} (no downscaling)")
+        else:
+            vf = f"scale={target_w}:{target_h}:flags=lanczos,format=yuv420p"
+            logger.info(f"Downscaling: {native_w}x{native_h} → {target_w}x{target_h} (lanczos)")
+
         cmd = [
             "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
             "-f", "x11grab",
             "-framerate", str(self._fps),
-            "-video_size", f"{self._width}x{self._height}",
+            "-video_size", f"{native_w}x{native_h}",
             "-i", self._display,
-            "-vf", f"scale={self._width}:{self._height}",
+            "-vf", vf,
             "-pix_fmt", "yuv420p",
             "-f", "rawvideo",
+            "-threads", "2",
             "-",
         ]
 
-        logger.info(f"Starting FFmpeg capture: {' '.join(cmd)}")
+        logger.info(f"Starting Linux capture: {' '.join(cmd)}")
 
         self._ffmpeg_process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -61,18 +111,15 @@ class LinuxCapture(CaptureSource):
             stderr=asyncio.subprocess.PIPE,
         )
 
-        # Create video track
-        self._video_track = FFmpegVideoTrack(
+        self._video_track = FFmpegRawVideoTrack(
             self._ffmpeg_process.stdout,
-            self._width,
-            self._height,
+            target_w,
+            target_h,
             self._fps,
         )
 
-        # Log FFmpeg stderr in background
         asyncio.create_task(self._log_ffmpeg_stderr())
-
-        logger.info(f"Linux capture started: {self._width}x{self._height} @ {self._fps}fps")
+        logger.info(f"Linux capture started: {target_w}x{target_h} @ {self._fps}fps")
 
     async def stop(self):
         """Stop FFmpeg capture."""
@@ -112,7 +159,6 @@ class VirtualCapture(LinuxCapture):
 
     async def start(self):
         """Start Xvfb virtual display, then capture it."""
-        # Start Xvfb if not already running
         await self._ensure_xvfb()
         await super().start()
 
@@ -161,48 +207,5 @@ class VirtualCapture(LinuxCapture):
             stderr=asyncio.subprocess.PIPE,
         )
 
-        # Wait for Xvfb to be ready
         await asyncio.sleep(1)
         logger.info(f"Xvfb started on {self._display}")
-
-
-class FFmpegVideoTrack(AiortcVideoTrack):
-    """
-    VideoStreamTrack that reads raw video frames from FFmpeg stdout pipe.
-    Converts raw YUV420P frames to aiortc VideoFrame objects.
-    """
-
-    kind = "video"
-
-    def __init__(self, stream: asyncio.StreamReader, width: int, height: int, fps: int):
-        super().__init__()
-        self._stream = stream
-        self._width = width
-        self._height = height
-        self._fps = fps
-        self._frame_size = width * height * 3 // 2  # YUV420P
-        self._timestamp = 0
-        self._frame_interval = 1 / fps
-
-    async def recv(self) -> av.VideoFrame:
-        """Read next frame from FFmpeg pipe and return as VideoFrame."""
-        # Read raw frame data
-        data = await self._stream.readexactly(self._frame_size)
-
-        # Create VideoFrame from raw YUV420P data
-        frame = av.VideoFrame(self._width, self._height, "yuv420p")
-        frame.planes[0].update(data[:self._width * self._height])
-        frame.planes[1].update(
-            data[self._width * self._height:self._width * self._height * 5 // 4]
-        )
-        frame.planes[2].update(
-            data[self._width * self._height * 5 // 4:]
-        )
-
-        # Set timestamp
-        frame.pts = int(self._timestamp * 90000)  # 90kHz clock
-        frame.time_base = Fraction(1, 90000)
-
-        self._timestamp += self._frame_interval
-
-        return frame

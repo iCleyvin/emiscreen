@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "project": "Emiscreen Desktop UI",
+    "version": "1.0.0",
+    "theme": "dark",
+    "date": "2026-05-03"
+  },
+
+  "colors": {
+    "background": {
+      "base":     "#111111",
+      "surface":  "#1a1a1a",
+      "elevated": "#1e1e1e",
+      "card":     "#222222",
+      "input":    "#161616"
+    },
+    "border": {
+      "subtle":   "#2d2d2d",
+      "default":  "#333333",
+      "medium":   "#444444"
+    },
+    "accent": {
+      "primary":        "#44aaff",
+      "primary-tint-12": "rgba(68,170,255,0.12)",
+      "primary-tint-08": "rgba(68,170,255,0.08)",
+      "primary-tint-04": "rgba(68,170,255,0.04)"
+    },
+    "semantic": {
+      "success":        "#44cc44",
+      "success-tint":   "rgba(60,200,60,0.12)",
+      "warning":        "#ffaa33",
+      "error":          "#ff6644",
+      "error-tint":     "rgba(255,100,60,0.12)"
+    },
+    "text": {
+      "primary":    "#eeeeee",
+      "secondary":  "#aaaaaa",
+      "muted":      "#666666",
+      "disabled":   "#555555"
+    },
+    "log": {
+      "ok":   "#44cc44",
+      "info": "#44aaff",
+      "warn": "#ffaa33",
+      "err":  "#ff6644"
+    }
+  },
+
+  "typography": {
+    "families": {
+      "ui":   "Caveat, cursive",
+      "mono": "'JetBrains Mono', monospace",
+      "note": "(production) replace Caveat with system-ui or Inter/Geist"
+    },
+    "sizes": {
+      "window-title":   "13px",
+      "screen-title":   "17px",
+      "section-label":  "12px",
+      "body":           "13px",
+      "body-lg":        "14px",
+      "button-lg":      "16px",
+      "button":         "14px",
+      "mono-data":      "12px",
+      "mono-small":     "10px",
+      "mono-tiny":      "9px"
+    },
+    "weights": {
+      "regular": 400,
+      "medium":  500,
+      "bold":    700
+    },
+    "section-label-style": "uppercase, letter-spacing: 1px"
+  },
+
+  "spacing": {
+    "window-padding":   "12px",
+    "card-padding":     "12px",
+    "card-gap":         "8px",
+    "section-gap":      "8px",
+    "item-gap":         "6px",
+    "input-padding":    "6px 10px"
+  },
+
+  "radii": {
+    "window":   "10px",
+    "card":     "8px",
+    "button":   "7px",
+    "input":    "6px",
+    "badge":    "20px",
+    "dot":      "50%"
+  },
+
+  "borders": {
+    "card":     "1.5px solid #333333",
+    "window":   "2px solid #444444",
+    "input":    "1.5px solid #444444",
+    "accent":   "1.5px solid #44aaff",
+    "dashed":   "1.5px dashed #555555"
+  },
+
+  "shadows": {
+    "status-active": "0 0 6px #44cc44",
+    "input-focus":   "0 0 0 2px rgba(68,170,255,0.2)",
+    "dot-active":    "0 0 5px currentColor"
+  },
+
+  "animations": {
+    "toggle-transition":  "left 0.15s ease",
+    "pulse-connecting":   "pulse 1.2s infinite",
+    "pulse-keyframes":    "0%,100%{opacity:1} 50%{opacity:0.4}"
+  },
+
+  "components": {
+    "tab-bar": {
+      "height":           "36px",
+      "background":       "#1e1e1e",
+      "border-bottom":    "2px solid #2d2d2d",
+      "tab-padding":      "8px 16px",
+      "active-color":     "#44aaff",
+      "active-border":    "2px solid #44aaff",
+      "inactive-color":   "#666666"
+    },
+    "sidebar": {
+      "width":            "52px",
+      "background":       "#1e1e1e",
+      "border-right":     "2px solid #2d2d2d",
+      "icon-size":        "36px",
+      "icon-radius":      "8px"
+    },
+    "toggle": {
+      "width":            "34px",
+      "height":           "18px",
+      "thumb-size":       "12px",
+      "off-bg":           "#333333",
+      "off-border":       "#444444",
+      "on-bg":            "rgba(68,170,255,0.3)",
+      "on-border":        "#44aaff",
+      "on-thumb":         "#44aaff",
+      "off-thumb":        "#666666"
+    },
+    "status-dot": {
+      "size":             "8px",
+      "connected":        "#44cc44",
+      "connecting":       "#ffaa33",
+      "disconnected":     "#cc4444"
+    },
+    "log": {
+      "background":       "#161616",
+      "font-size":        "10px",
+      "line-height":      "1.6",
+      "padding":          "8px",
+      "border-radius":    "5px"
+    },
+    "stat-card": {
+      "background":       "#1a1a1a",
+      "border":           "1px solid #2a2a2a",
+      "border-radius":    "5px",
+      "padding":          "6px 8px",
+      "label-size":       "9px",
+      "value-size":       "16px"
+    },
+    "tray-popup": {
+      "width":            "260px",
+      "background":       "#1e1e1e",
+      "border":           "2px solid #333333",
+      "border-radius":    "10px"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-/* Emiscreen Viewer Styles - Optimized for FireTV Browser */
+/* Emiscreen Viewer Styles */
 
 * {
     margin: 0;
@@ -9,15 +9,20 @@
 html, body {
     width: 100%;
     height: 100%;
-    overflow: hidden;
     background: #000;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    color: #fff;
+    cursor: none; /* Hide cursor on TV/browser client side */
 }
 
 #app {
     width: 100%;
     height: 100%;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #remote-video {
@@ -27,32 +32,41 @@ html, body {
     background: #000;
 }
 
-/* Status Overlay */
+/* Overlays */
 .overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.85);
-    z-index: 100;
+    z-index: 10;
     transition: opacity 0.3s ease;
 }
 
 .overlay.hidden {
-    opacity: 0;
-    pointer-events: none;
+    display: none;
 }
 
+.overlay p {
+    margin: 8px 16px;
+    font-size: 18px;
+    text-align: center;
+    line-height: 1.5;
+    color: #ddd;
+}
+
+.overlay strong {
+    color: #fff;
+}
+
+/* Spinner */
 .spinner {
     width: 48px;
     height: 48px;
     border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top-color: #4fc3f7;
+    border-top-color: #00d4ff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 16px;
@@ -62,74 +76,76 @@ html, body {
     to { transform: rotate(360deg); }
 }
 
-#status-text, #error-text {
-    color: #fff;
-    font-size: 18px;
-    font-weight: 500;
-    text-align: center;
-}
-
-#error-text {
-    color: #ef5350;
-    margin-bottom: 24px;
-}
-
-#reconnect-btn {
-    padding: 12px 32px;
+/* Buttons */
+button {
+    margin-top: 16px;
+    padding: 12px 24px;
     font-size: 16px;
     font-weight: 600;
-    color: #fff;
-    background: #4fc3f7;
+    color: #000;
+    background: #00d4ff;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    outline: none;
+    transition: transform 0.1s ease, background 0.2s ease;
 }
 
-#reconnect-btn:hover,
-#reconnect-btn:focus {
-    background: #29b6f6;
-    outline: 2px solid #fff;
+button:focus {
+    box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.4);
 }
 
-/* Stats Overlay */
+button:active {
+    transform: scale(0.96);
+}
+
+/* Stats overlay */
 .stats-overlay {
     position: absolute;
     top: 12px;
-    right: 12px;
+    left: 12px;
     display: flex;
-    gap: 12px;
-    padding: 8px 16px;
-    background: rgba(0, 0, 0, 0.7);
+    gap: 16px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 6px;
-    z-index: 50;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: #00d4ff;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.stats-overlay.hidden {
+    display: none;
+}
+
+/* Controls hint */
+.controls-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 20px;
     font-size: 13px;
     color: #aaa;
-    font-family: 'Courier New', monospace;
+    z-index: 5;
+    pointer-events: none;
+    transition: opacity 1s ease;
 }
 
-.stats-overlay span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.controls-hint.hidden {
+    opacity: 0;
 }
 
-/* Focus indicator for FireTV remote navigation */
-:focus-visible {
-    outline: 3px solid #4fc3f7;
-    outline-offset: 2px;
+/* Viewing state (hide UI when connected) */
+body.viewing .overlay {
+    opacity: 0;
+    pointer-events: none;
 }
 
-/* Hide cursor during active viewing */
-body.viewing #remote-video {
-    cursor: none;
-}
-
-/* Transition for smooth state changes */
-#remote-video {
-    transition: opacity 0.2s ease;
-}
-
-#remote-video.loading {
-    opacity: 0.5;
+body.viewing .overlay.hidden {
+    display: none;
 }

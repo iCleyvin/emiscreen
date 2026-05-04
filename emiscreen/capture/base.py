@@ -9,8 +9,10 @@ import asyncio
 import logging
 import platform
 from abc import ABC, abstractmethod
+from fractions import Fraction
 from typing import Optional
 
+import av
 from aiortc.mediastreams import VideoStreamTrack as AiortcVideoTrack
 
 from emiscreen.config import CaptureConfig
@@ -68,3 +70,46 @@ class CaptureSource(ABC):
                 return WindowsCapture(config)
             else:
                 raise RuntimeError(f"Unsupported platform: {system}")
+
+
+class FFmpegRawVideoTrack(AiortcVideoTrack):
+    """
+    VideoStreamTrack that reads raw YUV420P frames from an FFmpeg stdout pipe.
+    This is cross-platform: FFmpeg handles the OS-specific capture (x11grab,
+    gdigrab, etc.) and always outputs raw YUV420P frames that we feed directly
+    into aiortc/WebRTC.
+    """
+
+    kind = "video"
+
+    def __init__(self, stream: asyncio.StreamReader, width: int, height: int, fps: int):
+        super().__init__()
+        self._stream = stream
+        self._width = width
+        self._height = height
+        self._fps = fps
+        # YUV420P frame size: Y plane (w*h) + U plane (w*h/4) + V plane (w*h/4)
+        self._frame_size = width * height * 3 // 2
+        self._timestamp = 0
+        self._frame_interval = Fraction(1, fps)
+        self._pts_step = int(90000 / fps)  # 90kHz clock / fps
+
+    async def recv(self) -> av.VideoFrame:
+        """Read next frame from FFmpeg pipe and return as VideoFrame."""
+        # Read exact frame size
+        data = await self._stream.readexactly(self._frame_size)
+
+        # Build VideoFrame from raw YUV420P
+        frame = av.VideoFrame(self._width, self._height, "yuv420p")
+        y_size = self._width * self._height
+        uv_size = y_size // 4
+
+        frame.planes[0].update(data[:y_size])
+        frame.planes[1].update(data[y_size:y_size + uv_size])
+        frame.planes[2].update(data[y_size + uv_size:])
+
+        frame.pts = self._timestamp
+        frame.time_base = Fraction(1, 90000)
+        self._timestamp += self._pts_step
+
+        return frame

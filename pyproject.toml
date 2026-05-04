@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "emiscreen"
-version = "0.1.0"
-description = "Remote display via WebRTC - Cast your screen to any FireTV or browser"
+version = "1.0.0"
+description = "Remote display via WebRTC - Cast your screen to FireTV or any browser with native app support"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"

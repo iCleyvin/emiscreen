@@ -8,18 +8,39 @@
 </head>
 <body>
     <div id="app">
-        <video id="remote-video" autoplay playsinline></video>
+        <video id="remote-video" autoplay playsinline muted></video>
+
+        <!-- Connecting / Status -->
         <div id="status-overlay" class="overlay">
             <div class="spinner"></div>
             <p id="status-text">Connecting...</p>
         </div>
+
+        <!-- Error / Reconnect -->
         <div id="error-overlay" class="overlay hidden">
             <p id="error-text">Connection lost</p>
             <button id="reconnect-btn">Reconnect</button>
         </div>
+
+        <!-- SSL Warning (browser-only) -->
+        <div id="ssl-overlay" class="overlay hidden">
+            <p><strong>Certificate Warning</strong></p>
+            <p>Your browser is blocking the self-signed certificate.</p>
+            <p>On Fire TV Browser: press <strong>Menu</strong> → <strong>Advanced</strong> → <strong>Proceed</strong>.</p>
+            <p>Or install the native Emiscreen Fire TV app for automatic trust.</p>
+            <button id="ssl-retry-btn">Retry</button>
+        </div>
+
+        <!-- Stats -->
         <div id="stats-overlay" class="stats-overlay hidden">
             <span id="stats-fps">-- fps</span>
             <span id="stats-resolution">--</span>
+            <span id="stats-latency">-- ms</span>
+        </div>
+
+        <!-- D-Pad hint for Fire TV -->
+        <div id="controls-hint" class="controls-hint hidden">
+            <span>DPad = Mouse &middot; Center = Click &middot; Back = Escape</span>
         </div>
     </div>
     <script src="/static/viewer.js"></script>

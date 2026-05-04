@@ -127,35 +127,49 @@ class H264DecodeTrack(AiortcVideoTrack):
         self._timestamp = 0
         self._frame_interval = 1 / fps
         self._frame_count = 0
-        self._decoder = av.CodecContext.create("h264", "r")
+        self._decoder = None
         self._packet_buffer = b""
 
     async def recv(self) -> av.VideoFrame:
         """Read next h264 frame, decode, and return as VideoFrame."""
+        if self._decoder is None:
+            self._decoder = av.CodecContext.create("h264", "r")
+            logger.info("H264 decoder initialized")
+
         # Feed packets until we get a frame
         while True:
             # Try to decode what we have
-            frames = self._decoder.decode(self._packet_buffer)
-            if frames:
-                frame = frames[0]
-                frame.pts = int(self._timestamp * 90000)
-                frame.time_base = Fraction(1, 90000)
-                self._timestamp += self._frame_interval
-                self._frame_count += 1
-                if self._frame_count % 100 == 0:
-                    logger.debug(f"Decoded frame #{self._frame_count}")
-                return frame
+            try:
+                frames = self._decoder.decode(self._packet_buffer)
+                if frames:
+                    frame = frames[0]
+                    self._frame_count += 1
+                    if self._frame_count % 30 == 0:
+                        logger.info(f"Frame {self._frame_count}: {frame.width}x{frame.height} fmt={frame.format}")
+                    frame.pts = int(self._timestamp * 90000)
+                    frame.time_base = Fraction(1, 90000)
+                    self._timestamp += self._frame_interval
+                    return frame
+            except Exception as e:
+                logger.warning(f"Decode error: {e}, clearing buffer")
+                self._packet_buffer = b""
 
             # Need more data - read from stream
             try:
                 # Read length prefix (4 bytes big endian)
                 size_data = await self._stream.readexactly(4)
                 size = int.from_bytes(size_data, "big")
-                packet = await self._stream.readexactly(size)
-                self._packet_buffer += packet
+                if size > 0 and size < 2000000:  # Sanity check
+                    packet = await self._stream.readexactly(size)
+                    self._packet_buffer += packet
+                    if self._frame_count < 5:
+                        logger.debug(f"Packet {self._frame_count}: size={size}, buffer={len(self._packet_buffer)}")
+                else:
+                    logger.warning(f"Invalid packet size: {size}")
+                    break
             except asyncio.IncompleteReadError:
                 logger.warning("H264 stream ended")
                 raise
             except Exception as e:
                 logger.error(f"H264 read error: {e}")
-                self._packet_buffer = b""
+                break

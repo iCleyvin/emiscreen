@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -8,39 +8,66 @@
 </head>
 <body>
     <div id="app">
-        <video id="remote-video" autoplay playsinline muted></video>
+        <video id="remote-video" autoplay playsinline></video>
 
-        <!-- Connecting / Status -->
+        <!-- Connecting / Reconnecting Status -->
         <div id="status-overlay" class="overlay">
             <div class="spinner"></div>
-            <p id="status-text">Connecting...</p>
+            <p id="status-text">Conectando...</p>
+            <p id="status-subtext" class="reconnect-countdown hidden"></p>
         </div>
 
-        <!-- Error / Reconnect -->
-        <div id="error-overlay" class="overlay hidden">
-            <p id="error-text">Connection lost</p>
-            <button id="reconnect-btn">Reconnect</button>
+        <!-- Error Overlay -->
+        <div id="error-overlay" class="overlay error-overlay hidden">
+            <div class="error-icon" id="error-icon">⚠️</div>
+            <p class="error-title" id="error-title">Error de conexión</p>
+            <p class="error-message" id="error-message">No se pudo conectar al servidor.</p>
+            <p class="error-retry" id="error-retry"></p>
+            <div>
+                <button id="reconnect-btn">Reintentar</button>
+                <button id="reconnect-now-btn" class="secondary hidden">Reintentar ahora</button>
+            </div>
         </div>
 
         <!-- SSL Warning (browser-only) -->
         <div id="ssl-overlay" class="overlay hidden">
-            <p><strong>Certificate Warning</strong></p>
-            <p>Your browser is blocking the self-signed certificate.</p>
-            <p>On Fire TV Browser: press <strong>Menu</strong> → <strong>Advanced</strong> → <strong>Proceed</strong>.</p>
-            <p>Or install the native Emiscreen Fire TV app for automatic trust.</p>
-            <button id="ssl-retry-btn">Retry</button>
+            <p><strong>Advertencia de Certificado</strong></p>
+            <p>Tu navegador está bloqueando el certificado autofirmado.</p>
+            <p>En Fire TV Browser: presiona <strong>Menú</strong> → <strong>Avanzado</strong> → <strong>Continuar</strong>.</p>
+            <p>O instala la app nativa Emiscreen para Fire TV.</p>
+            <button id="ssl-retry-btn">Reintentar</button>
         </div>
 
-        <!-- Stats -->
+        <!-- Stats Overlay -->
         <div id="stats-overlay" class="stats-overlay hidden">
-            <span id="stats-fps">-- fps</span>
-            <span id="stats-resolution">--</span>
-            <span id="stats-latency">-- ms</span>
+            <div class="stat-row">
+                <span class="stat-label">Estado</span>
+                <span class="stat-value" id="stat-status">--</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Bitrate</span>
+                <span class="stat-value" id="stat-bitrate">--</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Ping</span>
+                <span class="stat-value" id="stat-ping">--</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Resolución</span>
+                <span class="stat-value" id="stat-resolution">--</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">FPS</span>
+                <span class="stat-value" id="stat-fps">--</span>
+            </div>
         </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast" class="toast"></div>
 
         <!-- D-Pad hint for Fire TV -->
         <div id="controls-hint" class="controls-hint hidden">
-            <span>DPad = Mouse &middot; Center = Click &middot; Back = Escape</span>
+            <span>D-Pad = Mouse · Centro = Click · Atrás = Escape · Menú = Stats</span>
         </div>
     </div>
     <script src="/static/viewer.js"></script>

@@ -61,6 +61,32 @@ html, body {
     color: #fff;
 }
 
+/* Error overlay specific styles */
+.error-overlay .error-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.error-overlay .error-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ff6b6b;
+    margin-bottom: 8px;
+}
+
+.error-overlay .error-message {
+    font-size: 16px;
+    color: #ccc;
+    max-width: 400px;
+    margin-bottom: 20px;
+}
+
+.error-overlay .error-retry {
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
 /* Spinner */
 .spinner {
     width: 48px;
@@ -99,26 +125,61 @@ button:active {
     transform: scale(0.96);
 }
 
+button.secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    margin-left: 8px;
+}
+
+button.secondary:focus {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
 /* Stats overlay */
 .stats-overlay {
     position: absolute;
     top: 12px;
-    left: 12px;
+    right: 12px;
+    left: auto;
     display: flex;
-    gap: 16px;
-    padding: 8px 14px;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 6px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
     font-size: 13px;
     font-variant-numeric: tabular-nums;
     color: #00d4ff;
     z-index: 5;
     pointer-events: none;
+    min-width: 160px;
 }
 
 .stats-overlay.hidden {
     display: none;
 }
+
+.stats-overlay .stat-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.stats-overlay .stat-label {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.stats-overlay .stat-value {
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.stats-overlay .stat-value.status-connecting { color: #ffd93d; }
+.stats-overlay .stat-value.status-streaming { color: #6bcb77; }
+.stats-overlay .stat-value.status-reconnecting { color: #ff6b6b; }
+.stats-overlay .stat-value.status-error { color: #ff6b6b; }
 
 /* Controls hint */
 .controls-hint {
@@ -149,3 +210,34 @@ body.viewing .overlay {
 body.viewing .overlay.hidden {
     display: none;
 }
+
+/* Reconnect countdown */
+.reconnect-countdown {
+    font-size: 14px;
+    color: #ffd93d;
+    margin-top: 8px;
+}
+
+/* Toast notification */
+.toast {
+    position: absolute;
+    top: 60px;
+    right: 12px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    font-size: 13px;
+    color: #fff;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.toast.error { border-left: 3px solid #ff6b6b; }
+.toast.info { border-left: 3px solid #00d4ff; }
+.toast.success { border-left: 3px solid #6bcb77; }

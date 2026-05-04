@@ -250,6 +250,9 @@ class EmiscreenServer:
         logger.info(f"Server running at https://{self.server_config.host}:{self.server_config.port}")
         logger.info(f"FireTV URL: https://{self._get_local_ip()}:{self.server_config.port}")
 
+        # Start bitrate adaptation monitor (Story 1-4)
+        bitrate_task = asyncio.create_task(self._bitrate_adaptation_loop())
+
         # Keep running
         try:
             while True:
@@ -257,7 +260,64 @@ class EmiscreenServer:
         except asyncio.CancelledError:
             pass
         finally:
+            bitrate_task.cancel()
             await self.stop()
+
+    async def _bitrate_adaptation_loop(self):
+        """Monitor network quality and adjust bitrate dynamically."""
+        BITRATE_LEVELS = ["2M", "4M", "6M", "8M", "12M"]
+        current_idx = BITRATE_LEVELS.index("8M") if "8M" in BITRATE_LEVELS else 2
+        check_interval = 2.0  # seconds
+        high_rtt_threshold = 150  # ms
+        low_rtt_threshold = 50   # ms
+        packet_loss_threshold = 2.0  # percent
+        stable_count = 0
+        degrade_count = 0
+
+        while True:
+            try:
+                await asyncio.sleep(check_interval)
+                if not self.webrtc or not self.webrtc.is_connected():
+                    continue
+
+                stats = await self.webrtc.get_network_stats()
+                rtt = stats.get("rtt_ms")
+                loss = stats.get("packet_loss_percent", 0)
+
+                if rtt is None:
+                    continue
+
+                logger.debug(f"Network stats: RTT={rtt:.0f}ms, Loss={loss:.1f}%, Bitrate={BITRATE_LEVELS[current_idx]}")
+
+                # Degrade: high RTT or packet loss
+                if rtt > high_rtt_threshold or loss > packet_loss_threshold:
+                    degrade_count += 1
+                    stable_count = 0
+                    if degrade_count >= 2 and current_idx > 0:
+                        current_idx -= 1
+                        new_bitrate = BITRATE_LEVELS[current_idx]
+                        logger.info(f"Network degraded (RTT={rtt:.0f}ms, Loss={loss:.1f}%). Lowering bitrate to {new_bitrate}")
+                        await self.webrtc.change_bitrate(new_bitrate)
+                        degrade_count = 0
+                # Upgrade: low RTT and no loss for sustained period
+                elif rtt < low_rtt_threshold and loss == 0:
+                    stable_count += 1
+                    degrade_count = 0
+                    if stable_count >= 5 and current_idx < len(BITRATE_LEVELS) - 1:
+                        current_idx += 1
+                        new_bitrate = BITRATE_LEVELS[current_idx]
+                        logger.info(f"Network stable (RTT={rtt:.0f}ms). Raising bitrate to {new_bitrate}")
+                        await self.webrtc.change_bitrate(new_bitrate)
+                        stable_count = 0
+                else:
+                    # Neutral zone
+                    degrade_count = max(0, degrade_count - 1)
+                    stable_count = max(0, stable_count - 1)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.debug(f"Bitrate adaptation error: {e}")
 
     async def stop(self):
         """Stop the Emiscreen server."""

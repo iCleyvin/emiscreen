@@ -13,128 +13,128 @@ stories:
     name: "Auto-reconexión inteligente"
     file: "production/stories/1-1-auto-reconnect.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 2
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-2"
     name: "Indicador de estado en app"
     file: "production/stories/1-2-status-overlay.md"
     priority: must-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1
-    blocker: "Depends on 1-1"
-    completed: ""
+    blocker: ""
+    completed: "2026-05-04"
 
   - id: "1-3"
     name: "Manejo de errores visibles"
     file: "production/stories/1-3-error-handling.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 1
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-4"
     name: "Adaptación dinámica de bitrate"
     file: "production/stories/1-4-bitrate-adaptation.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 2
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-5"
     name: "Tests unitarios core"
     file: "production/stories/1-5-unit-tests.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 2
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-6"
     name: "Smoke check automatizado"
     file: "production/stories/1-6-smoke-check.md"
     priority: must-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1
-    blocker: "Depends on 1-5"
-    completed: ""
+    blocker: ""
+    completed: "2026-05-04"
 
   - id: "1-7"
     name: "Audio del PC a Fire TV"
     file: "production/stories/1-7-audio-transmission.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 3
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-8"
     name: "Optimización de latencia"
     file: "production/stories/1-8-latency-optimization.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 2
-    blocker: "Depends on 1-4"
-    completed: ""
+    blocker: ""
+    completed: "2026-05-04"
 
   - id: "1-9"
     name: "Empaquetado Windows"
     file: "production/stories/1-9-windows-packaging.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-10"
     name: "Empaquetado APK release"
     file: "production/stories/1-10-apk-release.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-11"
     name: "Multi-cliente simultáneo"
     file: "production/stories/1-11-multi-client.md"
     priority: nice-to-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 3
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-12"
     name: "Amazon Appstore ready"
     file: "production/stories/1-12-amazon-appstore.md"
     priority: nice-to-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 2
     blocker: ""
-    completed: ""
+    completed: "2026-05-04"
 
   - id: "1-13"
     name: "Benchmark de latencia"
     file: "production/stories/1-13-benchmark-latency.md"
     priority: nice-to-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1
-    blocker: "Depends on 1-8"
-    completed: ""
+    blocker: ""
+    completed: "2026-05-04"

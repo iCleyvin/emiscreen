@@ -1,14 +1,15 @@
-"""
+/"""
 Emiscreen WebRTC Module
 
 Handles WebRTC peer connections, SDP offer/answer exchange,
-ICE candidate management, and video stream track creation.
+ICE candidate management, video stream track creation, and
+network quality monitoring for bitrate adaptation.
 """
 
 import asyncio
 import json
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 from aiortc.contrib.media import MediaRelay
@@ -73,6 +74,12 @@ class EmiscreenWebRTC:
         video_track = self._relay.subscribe(self._capture.video_track)
         pc.addTrack(video_track)
 
+        # Add audio track if available (Story 1-7)
+        if self._capture._audio_track:
+            audio_track = self._relay.subscribe(self._capture._audio_track)
+            pc.addTrack(audio_track)
+            logger.info(f"Audio track added for peer {peer_id}")
+
         # Set remote description (offer)
         await pc.setRemoteDescription(offer)
 
@@ -95,3 +102,44 @@ class EmiscreenWebRTC:
     def peer_count(self) -> int:
         """Return the number of active peer connections."""
         return len(self._peers)
+
+    async def get_network_stats(self) -> Dict[str, Any]:
+        """
+        Read network quality stats from all connected peers.
+        Returns: {rtt_ms, packet_loss_percent, jitter_ms, bitrate_estimate}
+        """
+        stats_agg = {
+            "rtt_ms": None,
+            "packet_loss_percent": 0.0,
+            "jitter_ms": 0.0,
+            "bitrate_kbps": None,
+        }
+
+        for peer_id, pc in self._peers.items():
+            if pc.connectionState != "connected":
+                continue
+            try:
+                stats = await pc.getStats()
+                for report in stats.values():
+                    if report.type == "candidate-pair" and getattr(report, "state", None) == "succeeded":
+                        if hasattr(report, "currentRoundTripTime"):
+                            stats_agg["rtt_ms"] = report.currentRoundTripTime * 1000
+                    if report.type == "inbound-rtp":
+                        if hasattr(report, "packetsLost") and hasattr(report, "packetsReceived"):
+                            total = report.packetsLost + report.packetsReceived
+                            if total > 0:
+                                stats_agg["packet_loss_percent"] = (report.packetsLost / total) * 100
+                        if hasattr(report, "jitter"):
+                            stats_agg["jitter_ms"] = report.jitter * 1000
+                        if hasattr(report, "bytesReceived"):
+                            # Rough bitrate estimate (needs delta calculation for accuracy)
+                            stats_agg["bitrate_kbps"] = getattr(report, "bitrateMean", 0) / 1000
+            except Exception as e:
+                logger.debug(f"Failed to get stats for peer {peer_id}: {e}")
+
+        return stats_agg
+
+    async def change_bitrate(self, new_bitrate: str):
+        """Change capture bitrate dynamically."""
+        if self._capture:
+            await self._capture.change_bitrate(new_bitrate)

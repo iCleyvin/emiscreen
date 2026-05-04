@@ -14,7 +14,7 @@ import ctypes
 import logging
 from typing import Optional
 
-from emiscreen.capture.base import CaptureSource, FFmpegRawVideoTrack
+from emiscreen.capture.base import CaptureSource, FFmpegRawVideoTrack, FFmpegRawAudioTrack
 from emiscreen.config import CaptureConfig
 
 logger = logging.getLogger(__name__)
@@ -177,6 +177,8 @@ class WindowsCapture(CaptureSource):
         self._width, self._height = self._parse_resolution()
         self._fps = config.fps
         self._display = config.display  # "desktop" or "1", "2", etc.
+        self._audio_process = None
+        self._audio_track = None
 
         # Get resolution/position of the specific monitor being captured
         monitors = _get_monitors()
@@ -219,40 +221,49 @@ class WindowsCapture(CaptureSource):
             logger.info(f"Scaling: {native_w}x{native_h} → {target_w}x{target_h} (lanczos)")
 
         # Build FFmpeg command
+        bitrate = getattr(self.config, 'bitrate', '8M')
+        
+        base_cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-f", "gdigrab",
+            "-framerate", str(self._fps),
+        ]
+        
         if self._display != "desktop":
-            # Capture specific monitor via offset + video_size
-            cmd = [
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel", "error",
-                "-f", "gdigrab",
-                "-framerate", str(self._fps),
+            base_cmd.extend([
                 "-video_size", f"{self._native_w}x{self._native_h}",
                 "-offset_x", str(self._monitor_x),
                 "-offset_y", str(self._monitor_y),
-                "-i", "desktop",
-                "-vf", vf,
-                "-pix_fmt", "yuv420p",
-                "-f", "rawvideo",
-                "-threads", "2",
-                "-",
-            ]
-        else:
-            cmd = [
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel", "error",
-                "-f", "gdigrab",
-                "-framerate", str(self._fps),
-                "-i", "desktop",
-                "-vf", vf,
-                "-pix_fmt", "yuv420p",
-                "-f", "rawvideo",
-                "-threads", "2",
-                "-",
-            ]
+            ])
+        
+        base_cmd.extend(["-i", "desktop"])
+        
+        # Low-latency tuning (Story 1-8)
+        encoder_opts = [
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-tune", "zerolatency",
+            "-profile:v", "baseline",
+            "-level", "3.0",
+            "-b:v", bitrate,
+            "-maxrate", bitrate,
+            "-bufsize", "2M",
+            "-g", str(self._fps * 2),  # Keyframe every 2 seconds
+            "-keyint_min", str(self._fps),
+        ]
+        
+        cmd = base_cmd + [
+            "-vf", vf,
+            "-pix_fmt", "yuv420p",
+        ] + encoder_opts + [
+            "-f", "rawvideo",
+            "-threads", "2",
+            "-",
+        ]
 
-        logger.info(f"Starting Windows capture: {' '.join(cmd)}")
+        logger.info(f"Starting Windows capture: {bitrate} @ {self._fps}fps (low-latency)")
 
         self._ffmpeg_process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -268,11 +279,76 @@ class WindowsCapture(CaptureSource):
         )
 
         asyncio.create_task(self._log_ffmpeg_stderr())
+        # Start audio capture (Story 1-7)
+        await self._start_audio()
+
         logger.info(f"Windows capture started: {target_w}x{target_h} @ {self._fps}fps from monitor '{self._display}'")
+
+    async def _start_audio(self):
+        """Start audio capture via FFmpeg."""
+        # Try Windows loopback audio (dshow), fallback to anullsrc (silence)
+        audio_cmds = [
+            # Try WASAPI loopback
+            ["ffmpeg", "-hide_banner", "-loglevel", "error",
+             "-f", "dshow", "-i", "audio=Stereo Mix",
+             "-acodec", "pcm_s16le", "-ar", "48000", "-ac", "2",
+             "-f", "s16le", "-"],
+            # Fallback: silence
+            ["ffmpeg", "-hide_banner", "-loglevel", "error",
+             "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+             "-acodec", "pcm_s16le", "-ar", "48000", "-ac", "2",
+             "-f", "s16le", "-"],
+        ]
+
+        for cmd in audio_cmds:
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                # Test if it's producing data (wait a bit)
+                await asyncio.sleep(0.5)
+                if proc.returncode is None:
+                    self._audio_process = proc
+                    self._audio_track = FFmpegRawAudioTrack(proc.stdout)
+                    asyncio.create_task(self._log_audio_stderr())
+                    logger.info("Audio capture started")
+                    return
+                else:
+                    proc.kill()
+            except Exception:
+                continue
+
+        logger.warning("Audio capture failed, continuing without audio")
+
+    async def _log_audio_stderr(self):
+        """Log audio FFmpeg stderr."""
+        if not self._audio_process or not self._audio_process.stderr:
+            return
+        try:
+            while self._running:
+                line = await self._audio_process.stderr.readline()
+                if not line:
+                    break
+                line_str = line.decode("utf-8", errors="replace").strip()
+                if line_str:
+                    logger.debug(f"Audio FFmpeg: {line_str}")
+        except Exception as e:
+            logger.debug(f"Audio stderr reader stopped: {e}")
 
     async def stop(self):
         """Stop FFmpeg capture."""
         await super().stop()
+
+        if self._audio_process:
+            try:
+                self._audio_process.terminate()
+                await asyncio.wait_for(self._audio_process.wait(), timeout=3.0)
+            except (asyncio.TimeoutError, ProcessLookupError):
+                self._audio_process.kill()
+                await self._audio_process.wait()
+            logger.info("Audio capture stopped")
 
         if self._ffmpeg_process:
             try:

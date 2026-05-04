@@ -186,19 +186,8 @@ class FFmpegVideoTrack(AiortcVideoTrack):
 
     async def recv(self) -> av.VideoFrame:
         """Read next frame from FFmpeg pipe and return as VideoFrame."""
-        # Read raw frame data with timeout
-        try:
-            data = await asyncio.wait_for(
-                self._stream.readexactly(self._frame_size),
-                timeout=5.0
-            )
-        except asyncio.TimeoutError:
-            logger.warning("Frame read timeout - no frame data in 5s")
-            raise
-
-        # Check for blank frame (all zeros)
-        if sum(data) == 0:
-            logger.warning("Blank frame received")
+        # Read raw frame data
+        data = await self._stream.readexactly(self._frame_size)
 
         # Create VideoFrame from raw YUV420P data
         frame = av.VideoFrame(self._width, self._height, "yuv420p")

@@ -86,6 +86,9 @@ class EmiscreenServer:
         # Status
         self.app.router.add_get("/status", self._handle_status)
 
+        # CORS preflight handler
+        self.app.router.add_options("/offer", self._handle_cors)
+
     async def _handle_index(self, request: web.Request) -> web.Response:
         """Serve the main viewer page."""
         viewer_path = pathlib.Path(__file__).parent / "static" / "viewer.html"
@@ -105,7 +108,12 @@ class EmiscreenServer:
                 return web.json_response({"error": "Missing SDP offer"}, status=400)
 
             sdp_answer, answer_type = await self.webrtc.handle_offer(sdp_offer)
-            return web.json_response({"sdp": sdp_answer, "type": answer_type})
+            response = web.json_response({"sdp": sdp_answer, "type": answer_type})
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        except Exception as e:
+            logger.error(f"Offer handling failed: {e}")
+            return web.json_response({"error": str(e)}, status=500)
         except Exception as e:
             logger.error(f"Offer handling failed: {e}")
             return web.json_response({"error": str(e)}, status=500)
@@ -149,6 +157,14 @@ class EmiscreenServer:
             "relay": self.relay_config.enabled,
         }
         return web.json_response(status)
+
+    async def _handle_cors(self, request: web.Request) -> web.Response:
+        """Handle CORS preflight requests."""
+        response = web.Response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
 
     async def _handle_status(self, request: web.Request) -> web.Response:
         """Detailed status endpoint."""

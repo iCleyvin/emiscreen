@@ -19,6 +19,18 @@
 
 ---
 
+## Three Ways to Use Emiscreen
+
+| Mode | What it does | Setup |
+|------|--------------|-------|
+| **Mirror** | Same screen on PC and TV | `Win + P` → Duplicate |
+| **Extended** | TV becomes a *real* second monitor | Needs [Parsec VDD](https://github.com/nomi-san/parsec-vdd) (free) |
+| **Solo TV** | PC screen off, TV only | Close lid or disable internal display |
+
+> **Full guide:** [docs/MODES.md](docs/MODES.md) — Choose the mode that fits your workflow.
+
+---
+
 ## Quick Start
 
 ### 1. Install Server (PC)
@@ -39,8 +51,11 @@ irm https://raw.githubusercontent.com/iCleyvin/emiscreen/main/install.ps1 | iex
 # Linux
 emiscreen --source ubuntu-desktop
 
-# Windows
+# Windows (mirror mode — easiest)
 emiscreen --source windows-pc
+
+# Windows (extended mode — capture only the virtual monitor)
+emiscreen --source windows-pc --display 2
 
 # With Fire TV ADB auto-launch (optional)
 emiscreen --source windows-pc --firetv 192.168.1.100
@@ -75,8 +90,10 @@ emiscreen --verbose                   # Debug logging
 
 ## Features
 
+- **Three usage modes** — Mirror, Extended (real second monitor), or Solo TV
 - **Ultra-low latency** — Direct WebRTC peer-to-peer (~50-150ms)
 - **Multi-source capture** — Linux (`x11grab`), Windows (`gdigrab`), Headless NAS (`Xvfb`)
+- **Multi-monitor support** — Capture all displays, or select one with `--display 1|2`
 - **Cross-platform input relay** — Linux (`xdotool`) + Windows (`SendInput` native)
 - **Native Fire TV app** — Kotlin, WebView, ignores SSL, D-Pad passthrough, settings screen
 - **Web client fallback** — Works in any modern browser with auto-reconnect
@@ -160,11 +177,12 @@ emiscreen --verbose                   # Debug logging
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) — Component diagram and data flow
+- **[Usage Modes](docs/MODES.md)** — Mirror, Extended, or Solo TV: which one to choose
 - [Setup Guide](docs/SETUP.md) — Installation and configuration
 - [FireTV Config](docs/FIRETV.md) — FireTV app build & D-Pad mapping
-- [Windows Config](docs/WINDOWS.md) — Windows deployment guide
+- [Windows Config](docs/WINDOWS.md) — Windows deployment & Parsec VDD setup
 - [NAS Config](docs/NAS.md) — Headless NAS / OpenMediaVault setup
+- [Architecture](docs/ARCHITECTURE.md) — Component diagram and data flow
 - [Development](docs/DEVELOPMENT.md) — Contributing and debugging
 - [API Reference](docs/API.md) — HTTP endpoints and WebSocket protocol
 

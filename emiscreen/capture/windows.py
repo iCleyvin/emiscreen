@@ -37,14 +37,11 @@ def _get_monitors() -> list[dict]:
                 ("dmSize", wintypes.WORD),
                 ("dmDriverExtra", wintypes.WORD),
                 ("dmFields", wintypes.DWORD),
-                ("dmOrientation", ctypes.c_short),
-                ("dmPaperSize", ctypes.c_short),
-                ("dmPaperLength", ctypes.c_short),
-                ("dmPaperWidth", ctypes.c_short),
-                ("dmScale", ctypes.c_short),
-                ("dmCopies", ctypes.c_short),
-                ("dmDefaultSource", ctypes.c_short),
-                ("dmPrintQuality", ctypes.c_short),
+                # dmPosition (union with print fields)
+                ("dmPositionX", wintypes.LONG),
+                ("dmPositionY", wintypes.LONG),
+                ("dmDisplayOrientation", wintypes.DWORD),
+                ("dmDisplayFixedOutput", wintypes.DWORD),
                 ("dmColor", ctypes.c_short),
                 ("dmDuplex", ctypes.c_short),
                 ("dmYResolution", ctypes.c_short),
@@ -67,36 +64,73 @@ def _get_monitors() -> list[dict]:
                 ("dmPanningHeight", wintypes.DWORD),
             ]
 
-        def enum_display_devices():
-            """Enumerate all display devices."""
-            class DISPLAY_DEVICE(ctypes.Structure):
+        def enum_display_monitors():
+            """Enumerate all monitors using GetMonitorInfo for accurate virtual-desktop coords."""
+            class MONITORINFO(ctypes.Structure):
                 _fields_ = [
-                    ("cb", wintypes.DWORD),
-                    ("DeviceName", ctypes.c_wchar * 32),
-                    ("DeviceString", ctypes.c_wchar * 128),
-                    ("StateFlags", wintypes.DWORD),
-                    ("DeviceID", ctypes.c_wchar * 128),
-                    ("DeviceKey", ctypes.c_wchar * 128),
+                    ("cbSize", wintypes.DWORD),
+                    ("rcMonitor", wintypes.RECT),
+                    ("rcWork", wintypes.RECT),
+                    ("dwFlags", wintypes.DWORD),
                 ]
 
-            device = DISPLAY_DEVICE()
-            device.cb = ctypes.sizeof(DISPLAY_DEVICE)
-            i = 0
-            while user32.EnumDisplayDevicesW(None, i, ctypes.byref(device), 0):
-                if device.StateFlags & 0x00000001:  # DISPLAY_DEVICE_ACTIVE
-                    dm = DEVMODE()
-                    dm.dmSize = ctypes.sizeof(DEVMODE)
-                    if user32.EnumDisplaySettingsW(device.DeviceName, ctypes.c_uint32(0xFFFFFFFF), ctypes.byref(dm)):
-                        monitors.append({
-                            "id": i + 1,
-                            "name": device.DeviceName,
-                            "width": dm.dmPelsWidth,
-                            "height": dm.dmPelsHeight,
-                            "refresh": dm.dmDisplayFrequency,
-                        })
-                i += 1
+            def mon_callback(hMonitor, hdcMonitor, lprcMonitor, dwData):
+                mi = MONITORINFO()
+                mi.cbSize = ctypes.sizeof(MONITORINFO)
+                if user32.GetMonitorInfoW(hMonitor, ctypes.byref(mi)):
+                    is_primary = (mi.dwFlags & 1) != 0
+                    width = mi.rcMonitor.right - mi.rcMonitor.left
+                    height = mi.rcMonitor.bottom - mi.rcMonitor.top
+                    monitors.append({
+                        "id": len(monitors) + 1,
+                        "name": f"Monitor{len(monitors)+1}",
+                        "width": width,
+                        "height": height,
+                        "refresh": 60,
+                        "x": mi.rcMonitor.left,
+                        "y": mi.rcMonitor.top,
+                    })
+                return 1
 
-        enum_display_devices()
+            CMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HMONITOR, wintypes.HDC, ctypes.POINTER(wintypes.RECT), wintypes.LPARAM)
+            user32.EnumDisplayMonitors(None, None, CMPROC(mon_callback), 0)
+
+        enum_display_monitors()
+
+        if not monitors:
+            # Fallback to EnumDisplaySettings
+            def enum_display_devices():
+                class DISPLAY_DEVICE(ctypes.Structure):
+                    _fields_ = [
+                        ("cb", wintypes.DWORD),
+                        ("DeviceName", ctypes.c_wchar * 32),
+                        ("DeviceString", ctypes.c_wchar * 128),
+                        ("StateFlags", wintypes.DWORD),
+                        ("DeviceID", ctypes.c_wchar * 128),
+                        ("DeviceKey", ctypes.c_wchar * 128),
+                    ]
+
+                device = DISPLAY_DEVICE()
+                device.cb = ctypes.sizeof(DISPLAY_DEVICE)
+                i = 0
+                active_idx = 1
+                while user32.EnumDisplayDevicesW(None, i, ctypes.byref(device), 0):
+                    if device.StateFlags & 0x00000001:
+                        dm = DEVMODE()
+                        dm.dmSize = ctypes.sizeof(DEVMODE)
+                        if user32.EnumDisplaySettingsW(device.DeviceName, ctypes.c_uint32(0xFFFFFFFF), ctypes.byref(dm)):
+                            monitors.append({
+                                "id": active_idx,
+                                "name": device.DeviceName,
+                                "width": dm.dmPelsWidth,
+                                "height": dm.dmPelsHeight,
+                                "refresh": dm.dmDisplayFrequency,
+                                "x": dm.dmPositionX,
+                                "y": dm.dmPositionY,
+                            })
+                            active_idx += 1
+                    i += 1
+            enum_display_devices()
 
         if not monitors:
             # Fallback: primary monitor only
@@ -144,14 +178,18 @@ class WindowsCapture(CaptureSource):
         self._fps = config.fps
         self._display = config.display  # "desktop" or "1", "2", etc.
 
-        # Get resolution of the specific monitor being captured
+        # Get resolution/position of the specific monitor being captured
         monitors = _get_monitors()
+        self._monitor_x = 0
+        self._monitor_y = 0
         if self._display != "desktop" and self._display.isdigit():
             monitor_id = int(self._display)
             selected = next((m for m in monitors if m["id"] == monitor_id), None)
             if selected:
                 self._native_w, self._native_h = selected["width"], selected["height"]
-                logger.info(f"Selected monitor {monitor_id}: {self._native_w}x{self._native_h}")
+                self._monitor_x = selected.get("x", 0)
+                self._monitor_y = selected.get("y", 0)
+                logger.info(f"Selected monitor {monitor_id}: {self._native_w}x{self._native_h} at ({self._monitor_x},{self._monitor_y})")
             else:
                 logger.warning(f"Monitor {monitor_id} not found, using primary")
                 self._native_w, self._native_h = _get_native_resolution()
@@ -180,22 +218,39 @@ class WindowsCapture(CaptureSource):
             vf = f"scale={target_w}:{target_h}:flags=lanczos,format=yuv420p"
             logger.info(f"Scaling: {native_w}x{native_h} → {target_w}x{target_h} (lanczos)")
 
-        # Determine input: "desktop" or monitor number
-        input_device = self._display if self._display != "desktop" else "desktop"
-
-        cmd = [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel", "error",
-            "-f", "gdigrab",
-            "-framerate", str(self._fps),
-            "-i", input_device,
-            "-vf", vf,
-            "-pix_fmt", "yuv420p",
-            "-f", "rawvideo",
-            "-threads", "2",
-            "-",
-        ]
+        # Build FFmpeg command
+        if self._display != "desktop":
+            # Capture specific monitor via offset + video_size
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",
+                "-f", "gdigrab",
+                "-framerate", str(self._fps),
+                "-video_size", f"{self._native_w}x{self._native_h}",
+                "-offset_x", str(self._monitor_x),
+                "-offset_y", str(self._monitor_y),
+                "-i", "desktop",
+                "-vf", vf,
+                "-pix_fmt", "yuv420p",
+                "-f", "rawvideo",
+                "-threads", "2",
+                "-",
+            ]
+        else:
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",
+                "-f", "gdigrab",
+                "-framerate", str(self._fps),
+                "-i", "desktop",
+                "-vf", vf,
+                "-pix_fmt", "yuv420p",
+                "-f", "rawvideo",
+                "-threads", "2",
+                "-",
+            ]
 
         logger.info(f"Starting Windows capture: {' '.join(cmd)}")
 
@@ -213,7 +268,7 @@ class WindowsCapture(CaptureSource):
         )
 
         asyncio.create_task(self._log_ffmpeg_stderr())
-        logger.info(f"Windows capture started: {target_w}x{target_h} @ {self._fps}fps from monitor '{input_device}'")
+        logger.info(f"Windows capture started: {target_w}x{target_h} @ {self._fps}fps from monitor '{self._display}'")
 
     async def stop(self):
         """Stop FFmpeg capture."""

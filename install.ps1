@@ -188,14 +188,29 @@ if (-not (Test-Path $CertFile) -or -not (Test-Path $KeyFile)) {
 
     $OpenSSL = Get-Command openssl -ErrorAction SilentlyContinue
     if (-not $OpenSSL) {
-        # Use PowerShell to generate self-signed cert
-        $cert = New-SelfSignedCertificate -DnsName "emiscreen.local", "localhost", "127.0.0.1" `
-            -CertStoreLocation "Cert:\CurrentUser\My" `
-            -NotAfter (Get-Date).AddYears(10) `
-            -KeyAlgorithm RSA -KeyLength 2048 -KeyExportable
+        # Use PowerShell to generate self-signed certificate
+        $CertSubject = "CN=emiscreen.local"
+        $CertDnsNames = @("emiscreen.local", "localhost", "127.0.0.1")
+
+        # Check PowerShell version for parameter compatibility
+        $PSMajor = $PSVersionTable.PSVersion.Major
+
+        if ($PSMajor -ge 7) {
+            # PowerShell 7+ has -KeyExportable parameter
+            $cert = New-SelfSignedCertificate -DnsName $CertDnsNames `
+                -CertStoreLocation "Cert:\CurrentUser\My" `
+                -NotAfter (Get-Date).AddYears(10) `
+                -KeyAlgorithm RSA -KeyLength 2048 -KeyExportable
+        } else {
+            # Windows PowerShell 5.1 - no KeyExportable
+            $cert = New-SelfSignedCertificate -DnsName $CertDnsNames `
+                -CertStoreLocation "Cert:\CurrentUser\My" `
+                -NotAfter (Get-Date).AddYears(10) `
+                -KeyAlgorithm RSA -KeyLength 2048
+        }
 
         $pwd = ConvertTo-SecureString -String "emiscreen" -Force -AsPlainText
-        Export-PfxCertificate -Cert $cert -FilePath "$ProjectDir\certs\emiscreen.pfx" -Password $pwd
+        Export-PfxCertificate -Cert $cert -FilePath "$ProjectDir\certs\emiscreen.pfx" -Password $pwd | Out-Null
 
         Write-Host "  Self-signed certificate created (use HTTPS with --insecure flag on client)" -ForegroundColor Yellow
     } else {

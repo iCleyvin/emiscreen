@@ -83,10 +83,7 @@ class EmiscreenWebRTC:
         self._peers[peer_id] = pc
         logger.info(f"Peer {peer_id} connected, sending answer")
 
-        return json.dumps({
-            "sdp": pc.localDescription.sdp,
-            "type": pc.localDescription.type,
-        })
+        return pc.localDescription.sdp, pc.localDescription.type
 
     def is_connected(self) -> bool:
         """Check if any peer is connected."""

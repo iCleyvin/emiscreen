@@ -104,8 +104,8 @@ class EmiscreenServer:
             if not sdp_offer:
                 return web.json_response({"error": "Missing SDP offer"}, status=400)
 
-            answer = await self.webrtc.handle_offer(sdp_offer)
-            return web.json_response({"sdp": answer, "type": "answer"})
+            sdp_answer, answer_type = await self.webrtc.handle_offer(sdp_offer)
+            return web.json_response({"sdp": sdp_answer, "type": answer_type})
         except Exception as e:
             logger.error(f"Offer handling failed: {e}")
             return web.json_response({"error": str(e)}, status=500)

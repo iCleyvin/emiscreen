@@ -189,24 +189,22 @@ if (-not (Test-Path $CertFile) -or -not (Test-Path $KeyFile)) {
     $OpenSSL = Get-Command openssl -ErrorAction SilentlyContinue
     if (-not $OpenSSL) {
         # Use PowerShell to generate self-signed certificate
-        $CertSubject = "CN=emiscreen.local"
         $CertDnsNames = @("emiscreen.local", "localhost", "127.0.0.1")
 
         # Check PowerShell version for parameter compatibility
         $PSMajor = $PSVersionTable.PSVersion.Major
 
         if ($PSMajor -ge 7) {
-            # PowerShell 7+ has -KeyExportable parameter
+            # PowerShell 7+ supports -KeyExportable
             $cert = New-SelfSignedCertificate -DnsName $CertDnsNames `
                 -CertStoreLocation "Cert:\CurrentUser\My" `
                 -NotAfter (Get-Date).AddYears(10) `
                 -KeyAlgorithm RSA -KeyLength 2048 -KeyExportable
         } else {
-            # Windows PowerShell 5.1 - no KeyExportable
+            # Windows PowerShell 5.1 - basic parameters only
             $cert = New-SelfSignedCertificate -DnsName $CertDnsNames `
                 -CertStoreLocation "Cert:\CurrentUser\My" `
-                -NotAfter (Get-Date).AddYears(10) `
-                -KeyAlgorithm RSA -KeyLength 2048
+                -NotAfter (Get-Date).AddYears(10)
         }
 
         $pwd = ConvertTo-SecureString -String "emiscreen" -Force -AsPlainText
